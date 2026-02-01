@@ -1,0 +1,10 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# System files
+.DS_Store
+.termux/
+
+# Temporary discourse files
+latest_discourse.md
