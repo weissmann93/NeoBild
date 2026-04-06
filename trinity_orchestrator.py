@@ -156,7 +156,7 @@ def chat(system_prompt, user_content, retries=4):
                     "max_tokens":  MAX_TOKENS,
                     "stream":      True,
                 },
-                headers={"Authorization": "Bearer REMOVED_SECRET"},
+                headers={"Authorization": f"Bearer {os.environ.get('MNN_API_KEY', '')}"},
                 timeout=180,
                 stream=True,
             )
