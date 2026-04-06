@@ -8,3 +8,10 @@ __pycache__/
 
 # Temporary discourse files
 latest_discourse.md
+
+# Trinity runtime artifacts
+agent_memory.json
+logs/
+*.log
+.env
+neobild_discourse_log.md
