@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trinity Orchestrator — NeoBild Discourse Log</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Bebas+Neue&display=swap');
+
+:root {
+  --bg: #050507;
+  --surface: #0d0d10;
+  --surface2: #13131a;
+  --border: #1a1a24;
+  --accent: #00ff88;
+  --accent-dim: rgba(0,255,136,0.12);
+  --text: #c8c8d8;
+  --muted: #3a3a50;
+  --font: 'JetBrains Mono', monospace;
+  --display: 'Bebas Neue', sans-serif;
+
+  --dominus: #ff4466;
+  --axiom: #00aaff;
+  --cipher: #ffaa00;
+  --vector: #aa44ff;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  min-height: 100vh;
+}
+
+/* scan-line overlay */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.03) 2px,
+    rgba(0,0,0,0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* ── HEADER ─────────────────────────────── */
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 24px 28px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: sticky; top: 0;
+  background: rgba(5,5,7,0.96);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.logo {
+  font-family: var(--display);
+  font-size: 28px;
+  letter-spacing: 3px;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.logo-sub {
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.stats-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+
+.stats-row b { color: var(--accent); font-weight: 400; }
+
+/* ── CONTROLS ───────────────────────────── */
+.controls {
+  padding: 14px 28px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  background: var(--surface);
+}
+
+.search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+}
+
+.search-wrap::before {
+  content: '⌕';
+  position: absolute;
+  left: 12px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+input[type="search"] {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 12px;
+  padding: 8px 12px 8px 32px;
+  outline: none;
+  border-radius: 2px;
+  transition: border-color .2s;
+}
+input[type="search"]:focus { border-color: var(--accent); }
+input[type="search"]::placeholder { color: var(--muted); }
+
+.filter-group {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--font);
+  font-size: 10px;
+  letter-spacing: 1px;
+  padding: 6px 12px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all .15s;
+  border-radius: 2px;
+}
+.filter-btn:hover { color: var(--text); }
+.filter-btn.active { color: var(--color); border-color: var(--color); background: rgba(var(--rgb), 0.08); }
+
+/* ── ROUND GRID ─────────────────────────── */
+main {
+  padding: 0;
+}
+
+.round-block {
+  border-bottom: 1px solid var(--border);
+}
+
+.round-header {
+  padding: 12px 28px;
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: background .15s;
+  border-left: 3px solid transparent;
+}
+.round-header:hover { background: var(--surface2); }
+.round-header.open { border-left-color: var(--accent); }
+
+.round-num {
+  font-family: var(--display);
+  font-size: 22px;
+  letter-spacing: 2px;
+  color: var(--accent);
+  min-width: 80px;
+  line-height: 1;
+}
+
+.round-preview {
+  font-size: 11px;
+  color: var(--muted);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.round-meta {
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.chevron {
+  color: var(--muted);
+  font-size: 10px;
+  transition: transform .2s;
+}
+.round-header.open .chevron { transform: rotate(90deg); }
+
+/* ── ENTRIES ─────────────────────────────── */
+.round-entries {
+  display: none;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1px;
+  background: var(--border);
+}
+.round-entries.open { display: grid; }
+
+.entry {
+  background: var(--bg);
+  padding: 18px 20px;
+  border-top: 2px solid var(--persona-color);
+  position: relative;
+  transition: background .15s;
+}
+.entry:hover { background: var(--surface); }
+
+.entry-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.persona-name {
+  font-family: var(--display);
+  font-size: 14px;
+  letter-spacing: 2px;
+  color: var(--persona-color);
+}
+
+.persona-role {
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.entry-meta {
+  margin-left: auto;
+  text-align: right;
+}
+
+.tps-val {
+  font-size: 10px;
+  color: var(--persona-color);
+  opacity: 0.7;
+}
+
+.ts-val {
+  font-size: 8px;
+  color: var(--muted);
+  display: block;
+}
+
+.entry-text {
+  font-size: 11px;
+  line-height: 1.75;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.entry-text mark {
+  background: rgba(0,255,136,0.2);
+  color: var(--accent);
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+.hash-row {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 8px;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+  word-break: break-all;
+}
+
+.hash-row code {
+  color: rgba(0,255,136,0.35);
+}
+
+/* ── UPLOAD SCREEN ─────────────────────── */
+#upload-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+  gap: 20px;
+  padding: 40px;
+}
+
+.drop-zone {
+  border: 1px dashed var(--muted);
+  border-radius: 4px;
+  padding: 48px 60px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+  max-width: 500px;
+  width: 100%;
+}
+.drop-zone:hover, .drop-zone.drag { border-color: var(--accent); }
+.drop-zone .icon { font-size: 32px; margin-bottom: 12px; opacity: .5; }
+.drop-zone p { font-size: 12px; color: var(--muted); letter-spacing: 1px; line-height: 1.8; }
+.drop-zone p b { color: var(--accent); }
+
+#file-input { display: none; }
+
+.load-btn {
+  background: var(--accent);
+  color: #000;
+  border: none;
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 10px 24px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all .15s;
+}
+.load-btn:hover { background: #00ffaa; }
+
+/* ── NO RESULTS ─────────────────────────── */
+.no-results {
+  padding: 60px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* ── LOADING ────────────────────────────── */
+#loading {
+  display: none;
+  padding: 40px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 2px;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: var(--border); }
+
+@media (max-width: 600px) {
+  header, .controls { padding: 12px 14px; }
+  .logo { font-size: 22px; }
+  .round-header { padding: 10px 14px; }
+  .round-entries { grid-template-columns: 1fr; }
+  .entry { padding: 14px; }
+  .drop-zone { padding: 32px 20px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div>
+      <div class="logo">TRINITY</div>
+      <div class="logo-sub">NeoBild · Autonomous CVE Discourse · BLAKE3</div>
+    </div>
+    <div class="stats-row" id="statsRow" style="display:none">
+      <span>Rounds: <b id="statRounds">—</b></span>
+      <span>Entries: <b id="statEntries">—</b></span>
+      <span>Session: <b id="statDate">—</b></span>
+      <span>Avg TPS: <b id="statTps">—</b></span>
+    </div>
+  </div>
+</header>
+
+<div class="controls" id="controls" style="display:none">
+  <div class="search-wrap">
+    <input type="search" id="searchBox" placeholder="Search CVE, vulnerability, tool..." oninput="applyFilters()">
+  </div>
+  <div class="filter-group" id="personaFilters">
+    <button class="filter-btn active" style="--color:#00ff88;--rgb:0,255,136" data-persona="ALL" onclick="setPersona(this)">ALL</button>
+    <button class="filter-btn" style="--color:#ff4466;--rgb:255,68,102" data-persona="Dominus" onclick="setPersona(this)">DOMINUS</button>
+    <button class="filter-btn" style="--color:#00aaff;--rgb:0,170,255" data-persona="Axiom" onclick="setPersona(this)">AXIOM</button>
+    <button class="filter-btn" style="--color:#ffaa00;--rgb:255,170,0" data-persona="Cipher" onclick="setPersona(this)">CIPHER</button>
+    <button class="filter-btn" style="--color:#aa44ff;--rgb:170,68,255" data-persona="Vector" onclick="setPersona(this)">VECTOR</button>
+  </div>
+  <button class="filter-btn" onclick="expandAll()" style="--color:#888">EXPAND ALL</button>
+  <button class="filter-btn" onclick="collapseAll()" style="--color:#888">COLLAPSE</button>
+</div>
+
+<div id="loading">PARSING LOG...</div>
+
+<div id="upload-screen">
+  <div class="drop-zone" id="dropZone" onclick="document.getElementById('file-input').click()"
+    ondragover="e=>{e.preventDefault();this.classList.add('drag')}"
+    ondragleave="this.classList.remove('drag')"
+    ondrop="handleDrop(event)">
+    <div class="icon">⬡</div>
+    <p>Drop <b>neobild_discourse_log_blake3*.md</b> here<br>or click to select file</p>
+  </div>
+  <input type="file" id="file-input" accept=".md,.txt" onchange="handleFile(this.files[0])">
+  <p style="font-size:10px;color:var(--muted);letter-spacing:1px;text-align:center">
+    File stays local — nothing is uploaded anywhere
+  </p>
+</div>
+
+<main id="main" style="display:none"></main>
+
+<script>
+const PERSONA_COLORS = {
+  'Dominus': '#ff4466',
+  'Axiom':   '#00aaff',
+  'Cipher':  '#ffaa00',
+  'Vector':  '#aa44ff',
+};
+
+let allRounds = [];
+let activePersona = 'ALL';
+let searchQuery = '';
+
+// ── File handling ──────────────────────────────────────
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f) handleFile(f);
+}
+
+function handleFile(file) {
+  if (!file) return;
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('upload-screen').style.display = 'none';
+  const reader = new FileReader();
+  reader.onload = e => {
+    allRounds = parseLog(e.target.result);
+    renderAll();
+  };
+  reader.readAsText(file);
+}
+
+// ── Parser ─────────────────────────────────────────────
+function parseLog(text) {
+  const lines = text.split('\n');
+  const rounds = {};
+  let current = null;
+  let textLines = [];
+
+  function flush() {
+    if (current) {
+      current.text = textLines.join('\n').trim();
+      const rn = current.round;
+      if (!rounds[rn]) rounds[rn] = [];
+      rounds[rn].push(current);
+    }
+    current = null;
+    textLines = [];
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // ### Round N | Persona (Role) (timestamp)
+    const m = line.match(/^###\s+Round\s+(\d+)\s+\|\s+(\w+)\s+\(([^)]+)\)\s+\(([^)]+)\)/);
+    if (m) {
+      flush();
+      current = {
+        round: parseInt(m[1]),
+        persona: m[2],
+        role: m[3],
+        ts: m[4],
+        hash: '',
+        tps: '',
+        text: ''
+      };
+      continue;
+    }
+
+    if (current) {
+      // Hash + TPS line
+      const hm = line.match(/\*\*Anchor-Hash \(BLAKE3\):\*\*\s+`([a-f0-9]+)`.*\*\*TPS:\*\*\s+([\d.]+)/);
+      if (hm) {
+        current.hash = hm[1];
+        current.tps = hm[2];
+        continue;
+      }
+      // Skip empty lines at start
+      if (!current.text && !line.trim()) continue;
+      textLines.push(line);
+    }
+  }
+  flush();
+
+  return Object.keys(rounds)
+    .sort((a, b) => a - b)
+    .map(rn => ({ round: parseInt(rn), entries: rounds[rn] }));
+}
+
+// ── Render ─────────────────────────────────────────────
+function renderAll() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('controls').style.display = 'flex';
+  document.getElementById('statsRow').style.display = 'flex';
+
+  const totalEntries = allRounds.reduce((s, r) => s + r.entries.length, 0);
+  const allTps = allRounds.flatMap(r => r.entries.map(e => parseFloat(e.tps))).filter(v => !isNaN(v));
+  const avgTps = allTps.length ? (allTps.reduce((a,b)=>a+b,0)/allTps.length).toFixed(2) : '—';
+  const firstTs = allRounds[0]?.entries[0]?.ts?.slice(0,10) || '—';
+
+  document.getElementById('statRounds').textContent = allRounds.length;
+  document.getElementById('statEntries').textContent = totalEntries;
+  document.getElementById('statDate').textContent = firstTs;
+  document.getElementById('statTps').textContent = avgTps + ' t/s';
+
+  applyFilters();
+  document.getElementById('main').style.display = 'block';
+}
+
+function applyFilters() {
+  searchQuery = document.getElementById('searchBox').value.toLowerCase().trim();
+  const main = document.getElementById('main');
+  main.innerHTML = '';
+
+  let shown = 0;
+
+  allRounds.forEach(round => {
+    const entries = round.entries.filter(e => {
+      if (activePersona !== 'ALL' && e.persona !== activePersona) return false;
+      if (searchQuery) {
+        const hay = (e.text + e.persona + e.role + e.hash).toLowerCase();
+        if (!hay.includes(searchQuery)) return false;
+      }
+      return true;
+    });
+    if (!entries.length) return;
+    shown++;
+
+    const block = document.createElement('div');
+    block.className = 'round-block';
+
+    const preview = entries[0]?.text?.slice(0, 120) || '';
+
+    block.innerHTML = `
+      <div class="round-header" onclick="toggleRound(this)">
+        <div class="round-num">RND ${String(round.round).padStart(3,'0')}</div>
+        <div class="round-preview">${esc(preview)}...</div>
+        <div class="round-meta">${entries.length} entries</div>
+        <div class="chevron">▶</div>
+      </div>
+      <div class="round-entries">
+        ${entries.map(e => renderEntry(e)).join('')}
+      </div>
+    `;
+    main.appendChild(block);
+  });
+
+  if (!shown) {
+    main.innerHTML = '<div class="no-results">No results found</div>';
+  }
+}
+
+function renderEntry(e) {
+  const color = PERSONA_COLORS[e.persona] || '#888';
+  const tsShort = e.ts?.slice(11,16) || '';
+  const textHtml = searchQuery
+    ? esc(e.text).replace(new RegExp(`(${escR(searchQuery)})`, 'gi'), '<mark>$1</mark>')
+    : esc(e.text);
+
+  return `
+    <div class="entry" style="--persona-color:${color}">
+      <div class="entry-header">
+        <div>
+          <div class="persona-name">${e.persona}</div>
+          <div class="persona-role">${e.role}</div>
+        </div>
+        <div class="entry-meta">
+          <div class="tps-val">${e.tps} t/s</div>
+          <span class="ts-val">${tsShort}</span>
+        </div>
+      </div>
+      <div class="entry-text">${textHtml}</div>
+      <div class="hash-row">BLAKE3 <code>${e.hash.slice(0,32)}…</code></div>
+    </div>
+  `;
+}
+
+function toggleRound(header) {
+  header.classList.toggle('open');
+  header.nextElementSibling.classList.toggle('open');
+}
+
+function expandAll() {
+  document.querySelectorAll('.round-header').forEach(h => {
+    h.classList.add('open');
+    h.nextElementSibling.classList.add('open');
+  });
+}
+
+function collapseAll() {
+  document.querySelectorAll('.round-header').forEach(h => {
+    h.classList.remove('open');
+    h.nextElementSibling.classList.remove('open');
+  });
+}
+
+function setPersona(btn) {
+  document.querySelectorAll('.filter-btn[data-persona]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activePersona = btn.dataset.persona;
+  applyFilters();
+}
+
+function esc(s) {
+  return String(s||'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escR(s) { return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+</script>
+</body>
+</html>

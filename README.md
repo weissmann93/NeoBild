@@ -29,7 +29,7 @@ The agents react to each other in a chained loop: each persona receives the prev
 - **Chained agent reactions** — Axiom, Cipher and Vector each receive the previous agent's answer as input, producing a coherent 4-step analysis per round
 - **Diversity / quality check** — after each round, pairwise word-overlap across all 4 answers is computed; rounds with >80% overlap are discarded and not written to history
 - **Best findings extractor** — if Cipher's answer contains high-signal terms (`CVE`, `bypass`, `injection`, `exploit`, `leak`, `exfiltrate`), the full round dialog is appended to `best_findings.md` with timestamp and topic
-- **Hash-anchored discourse log** — every response is written to `neobild_discourse_log.md` with a SHA-256 anchor hash for traceability
+- **Hash-anchored discourse log** — every response is written to `neobild_discourse_log_blake3.md` with a BLAKE3 anchor hash and TPS measurement per response for traceability
 - **Thinking-mode support** — `<think>...</think>` blocks stream in dark gray and are stripped from stored answers; `/no_think` is passed to suppress thinking on models that support it
 - **Automatic deduplication** — if a response has >70% word overlap with the previous one, the agent is retried with a diversity prompt
 
@@ -39,8 +39,9 @@ The agents react to each other in a chained loop: each persona receives the prev
 |---|---|
 | `trinity_orchestrator.py` | Main agent loop — fetches topics, runs personas, saves findings |
 | `trinity_viewer.py` | Terminal viewer for live discourse output |
+| `trinity.html` | Browser-based discourse log viewer (filter by persona, full-text search, BLAKE3 display) |
 | `best_findings.md` | Auto-extracted high-signal findings (gitignored) |
-| `neobild_discourse_log.md` | Full hash-anchored round log (gitignored) |
+| `neobild_discourse_log_blake3.md` | Full BLAKE3 hash-anchored round log with TPS metrics |
 | `agent_memory.json` | Sliding history window (gitignored) |
 
 ## Usage
