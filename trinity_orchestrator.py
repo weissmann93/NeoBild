@@ -4,9 +4,9 @@ import datetime
 import os
 import sys
 import time
-import hashlib
 import re
 import random
+import blake3
 
 
 def strip_thinking(text):
@@ -15,7 +15,7 @@ def strip_thinking(text):
 # ── Paths ──────────────────────────────────────────────────────────────────
 SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
 LOG_DIR      = os.path.join(SCRIPT_DIR, "logs")
-LOG_FILE     = os.path.join(SCRIPT_DIR, "neobild_discourse_log.md")
+LOG_FILE     = os.path.join(SCRIPT_DIR, "neobild_discourse_log_blake3.md")
 HISTORY_FILE = os.path.join(SCRIPT_DIR, "agent_memory.json")
 
 # ── MNN Chat / Qwen2.5-Coder ───────────────────────────────────────────────
@@ -40,7 +40,7 @@ def logline(msg):
 
 
 def get_hash(text):
-    return hashlib.sha256(text.encode()).hexdigest()
+    return blake3.blake3(text.encode()).hexdigest()
 
 
 _FILLER = ("Would you like", "Let me know", "I can assist", "Please clarify", "Next steps")
@@ -141,9 +141,11 @@ def wait_for_mnn():
 
 
 def chat(system_prompt, user_content, retries=4):
-    """OpenAI-compatible streaming chat call to MNN Chat server."""
+    """OpenAI-compatible streaming chat call to MNN Chat server.
+    Returns (answer, tps) or (None, 0.0) on failure."""
     for attempt in range(retries):
         try:
+            t_start = time.time()
             r = requests.post(
                 f"{LLAMA_URL}/v1/chat/completions",
                 json={
@@ -165,6 +167,7 @@ def chat(system_prompt, user_content, retries=4):
             think_chunks  = []
             in_think = False
             buffer = ""
+            token_count = 0
             for raw_line in r.iter_lines():
                 if not raw_line:
                     continue
@@ -178,6 +181,7 @@ def chat(system_prompt, user_content, retries=4):
                     delta = json.loads(data)["choices"][0]["delta"].get("content", "")
                     if not delta:
                         continue
+                    token_count += 1
                     buffer += delta
                     while buffer:
                         if not in_think and "<think>" in buffer:
@@ -201,6 +205,8 @@ def chat(system_prompt, user_content, retries=4):
                             buffer = ""
                 except (KeyError, json.JSONDecodeError):
                     pass
+            elapsed = max(time.time() - t_start, 0.001)
+            tps = round(token_count / elapsed, 2)
             print()
             answer = "".join(answer_chunks).strip()
             # Extract any plaintext thinking preamble from the answer text
@@ -209,15 +215,15 @@ def chat(system_prompt, user_content, retries=4):
                 think_chunks.append(pt_think)
             think = "".join(think_chunks).strip()
             if think:
-                return f"[thinking]\n{think}\n[/thinking]\n\n{answer}"
-            return answer
+                return f"[thinking]\n{think}\n[/thinking]\n\n{answer}", tps
+            return answer, tps
         except requests.exceptions.Timeout:
             logline(f"  Timeout (attempt {attempt+1}/{retries}), waiting 10s...")
         except Exception as e:
             logline(f"  Error (attempt {attempt+1}/{retries}): {e}")
         if attempt < retries - 1:
             time.sleep(10)
-    return None
+    return None, 0.0
 
 
 def load_history():
@@ -249,11 +255,11 @@ def save_history(history):
         logline(f"ERROR saving history: {e}")
 
 
-def append_log(round_count, name, anchor_hash, answer):
+def append_log(round_count, name, anchor_hash, answer, tps):
     ts = datetime.datetime.now().isoformat(timespec="seconds")
     with open(LOG_FILE, "a") as f:
         f.write(f"### Round {round_count} | {name} ({ts})\n")
-        f.write(f"**Anchor-Hash:** `{anchor_hash}`\n\n")
+        f.write(f"**Anchor-Hash (BLAKE3):** `{anchor_hash}` | **TPS:** {tps}\n\n")
         f.write(f"{answer}\n\n")
 
 
@@ -355,7 +361,7 @@ def main():
                 if name == "Axiom (Analyst)":
                     user_content = SEED_TOPIC + " " + last_answer
 
-                answer = chat(system_prompt, user_content)
+                answer, tps = chat(system_prompt, user_content)
 
                 if answer is None:
                     logline(f"  {name}: NO ANSWER — skipping, checking server...")
@@ -376,7 +382,7 @@ def main():
                     print(f"\n\033[90m[dedup] retrying {name}...\033[0m")
                     print(f"{color}{name}:\033[0m ", end="", flush=True)
                     retry_content = user_content + " Give a different angle, do not repeat what was already said."
-                    answer = chat(system_prompt, retry_content)
+                    answer, tps = chat(system_prompt, retry_content)
                     if answer is None:
                         logline(f"  {name}: NO ANSWER on retry — skipping...")
                         wait_for_mnn()
@@ -388,10 +394,12 @@ def main():
                     if len(words) > 60:
                         answer = " ".join(words[:60])
 
+                logline(f"  {name}: {tps} t/s")
+
                 if name == "Cipher (Critic)":
                     cipher_answer = answer
 
-                append_log(round_count, name, anchor_hash, answer)
+                append_log(round_count, name, anchor_hash, answer, tps)
                 history.append(answer)
                 round_answers.append(f"{name}: {answer[:200]}")
                 last_answer = answer
