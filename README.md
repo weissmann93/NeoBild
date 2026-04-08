@@ -1,68 +1,72 @@
-# NeoBild — Trinity Multi-Agent Security Orchestrator
+# NeoBild — Trinity
 
-An autonomous 4-agent red-team dialog loop running entirely on Android via Termux — no cloud, no API dependency, fully local and offline-capable.
+Trinity is a 4-agent autonomous CVE analysis loop running entirely on Android via Termux — no cloud, no GPU, no API key.
 
-## Agents
+![demo](demo.gif)
 
-| Persona | Role |
-|---|---|
-| **Dominus (Skeptic)** | Red-team researcher — finds new vulnerabilities not yet mentioned |
-| **Axiom (Analyst)** | Forensic analyst — adds one new technical detail to the previous finding |
-| **Cipher (Critic)** | Critic — identifies one specific flaw in the previous statement |
-| **Vector (Strategist)** | Strategist — names one specific tool, library or config that mitigates the flaw |
+## Why this exists
 
-The agents react to each other in a chained loop: each persona receives the previous persona's output as input, grounding every response in the prior finding.
+Running a local LLM on a mid-range Android phone is possible. Running a multi-agent security analysis loop on that same phone, without any external API, is the point of this project. The device is both the inference server and the orchestration host.
+
+## How it works
+
+Four personas execute in a fixed chain each round. Each agent receives only the previous agent's output as context:
+
+1. **Dominus (Skeptic)** — identifies one new vulnerability not yet mentioned
+2. **Axiom (Analyst)** — adds one new technical detail to the previous finding
+3. **Cipher (Critic)** — identifies one specific flaw in the previous statement
+4. **Vector (Strategist)** — names one specific tool, library, or config that mitigates the flaw
+
+At the start of each round, a seed topic is drawn from a rotating list of CVE identifiers fetched from the CISA Known Exploited Vulnerabilities catalog. If the fetch fails, a static fallback list is used.
+
+After each round, pairwise word-overlap across all four answers is computed. Rounds exceeding 80% overlap are discarded. Rounds where a single response exceeds 70% overlap with the previous one trigger a retry with a diversity prompt.
+
+Each response is written to `neobild_discourse_log_blake3.md` with a BLAKE3 anchor hash and per-response TPS measurement.
 
 ## Stack
 
 | Component | Details |
 |---|---|
 | Model | Qwen2.5-Coder-1.5B-Instruct (MNN quantized) |
-| Engine | MNN Chat server via Termux (OpenAI-compatible API on port 8080) |
+| Engine | MNN Chat server, OpenAI-compatible API on port 8080 |
 | Device | Redmi Note 14 Pro+ (Snapdragon 7s Gen 3, 8 GB RAM) |
-| Infrastructure | Fully local / offline |
+| Infrastructure | Fully local, no internet required at inference time |
 
-## Features
-
-- **Live CVE topic fetching** — pulls vulnerability names from the [CISA Known Exploited Vulnerabilities catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) at startup; falls back to a curated static topic list if the fetch fails
-- **Rotating topics** — each round cycles through 10 topics (CVE-sourced or static) so the discourse never repeats the same seed twice
-- **Chained agent reactions** — Axiom, Cipher and Vector each receive the previous agent's answer as input, producing a coherent 4-step analysis per round
-- **Diversity / quality check** — after each round, pairwise word-overlap across all 4 answers is computed; rounds with >80% overlap are discarded and not written to history
-- **Best findings extractor** — if Cipher's answer contains high-signal terms (`CVE`, `bypass`, `injection`, `exploit`, `leak`, `exfiltrate`), the full round dialog is appended to `best_findings.md` with timestamp and topic
-- **Hash-anchored discourse log** — every response is written to `neobild_discourse_log_blake3.md` with a BLAKE3 anchor hash and TPS measurement per response for traceability
-- **Thinking-mode support** — `<think>...</think>` blocks stream in dark gray and are stripped from stored answers; `/no_think` is passed to suppress thinking on models that support it
-- **Automatic deduplication** — if a response has >70% word overlap with the previous one, the agent is retried with a diversity prompt
-
-## Files
-
-| File | Purpose |
-|---|---|
-| `trinity_orchestrator.py` | Main agent loop — fetches topics, runs personas, saves findings |
-| `trinity_viewer.py` | Terminal viewer for live discourse output |
-| `trinity.html` | Browser-based discourse log viewer (filter by persona, full-text search, BLAKE3 display) |
-| `best_findings.md` | Auto-extracted high-signal findings (gitignored) |
-| `neobild_discourse_log_blake3.md` | Full BLAKE3 hash-anchored round log with TPS metrics |
-| `agent_memory.json` | Sliding history window (gitignored) |
-
-## Usage
-
-Start MNN Chat on port 8080, then:
+## Quickstart
 
 ```bash
+# Start MNN Chat on port 8080 first, then:
 python3 ~/NeoBild/trinity_orchestrator.py
-```
-
-Or use the alias defined in `~/.bashrc`:
-
-```bash
+# Or via alias:
 trinity
 ```
 
-## Background
+## Features
 
-This project is part of **NeoBild** — a German community for digital sovereignty, self-hosting and local AI.
+- **CISA KEV topic fetch** — pulls current CVE identifiers from the CISA Known Exploited Vulnerabilities catalog at startup; falls back to a static list on failure
+- **Rotating seed topics** — each round uses `TOPICS[round_count % len(TOPICS)]` so the seed never repeats consecutively
+- **Chained agent context** — each persona receives only the immediately preceding output, keeping responses grounded and short
+- **Diversity filter** — pairwise word-overlap check after each round; >80% discards the round, >70% per-agent triggers a retry
+- **Best findings extractor** — Cipher responses containing `CVE`, `bypass`, `injection`, `exploit`, `leak`, or `exfiltrate` are appended to `best_findings.md` with timestamp and topic
+- **BLAKE3 hash-anchored log** — every response written to `neobild_discourse_log_blake3.md` with a BLAKE3 anchor hash and TPS measurement per response
+- **Thinking-mode handling** — `<think>...</think>` blocks stream in a separate color and are stripped before storage; `/no_think` suppresses thinking on supported models
+- **Browser log viewer** — `trinity.html` renders the discourse log with persona filter and full-text search
 
-More at: [neobild.de](https://neobild.de)
+## Project structure
+
+```
+trinity_orchestrator.py       main agent loop
+trinity_viewer.py             terminal log viewer
+trinity.html                  browser-based log viewer
+start_trinity.sh              launcher script
+best_findings.md              auto-extracted high-signal rounds (gitignored)
+neobild_discourse_log_blake3.md  full round log with BLAKE3 hashes and TPS
+agent_memory.json             sliding context window (gitignored)
+```
+
+## Contributing
+
+This is a single-device research project. Issues and pull requests are open, but the primary constraint is what runs on a Snapdragon 7s Gen 3 with 8 GB RAM.
 
 ## License
 
