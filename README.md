@@ -64,6 +64,10 @@ neobild_discourse_log_blake3.md  full round log with BLAKE3 hashes and TPS
 agent_memory.json             sliding context window (gitignored)
 ```
 
+## Background
+
+This project is part of [NeoBild](https://neobild.de) — a German community for digital sovereignty, self-hosting and local AI.
+
 ## Contributing
 
 This is a single-device research project. Issues and pull requests are open, but the primary constraint is what runs on a Snapdragon 7s Gen 3 with 8 GB RAM.
