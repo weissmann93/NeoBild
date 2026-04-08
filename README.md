@@ -2,7 +2,7 @@
 
 Trinity is a 4-agent autonomous CVE analysis loop running entirely on Android via Termux — no cloud, no GPU, no API key.
 
-![demo](demo.gif)
+![demo](demo.jpg)
 
 ## Why this exists
 
