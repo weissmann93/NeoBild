@@ -17,6 +17,7 @@ SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
 LOG_DIR      = os.path.join(SCRIPT_DIR, "logs")
 LOG_FILE     = os.path.join(SCRIPT_DIR, "neobild_discourse_log_blake3.md")
 HISTORY_FILE = os.path.join(SCRIPT_DIR, "agent_memory.json")
+CHAIN_FILE   = os.path.join(SCRIPT_DIR, "hashes", "chain.jsonl")
 
 # ── MNN Chat / Qwen2.5-Coder ───────────────────────────────────────────────
 LLAMA_URL    = "http://127.0.0.1:8080"
@@ -41,6 +42,60 @@ def logline(msg):
 
 def get_hash(text):
     return blake3.blake3(text.encode()).hexdigest()
+
+
+# ── BLAKE3 hash chain ───────────────────────────────────────────────────────
+_GENESIS_HASH = "0" * 64  # sentinel prev_hash for the first entry
+
+def _chain_last_hash():
+    """Return the hash of the last entry in the chain file, or genesis sentinel."""
+    if not os.path.exists(CHAIN_FILE):
+        return _GENESIS_HASH
+    last = None
+    try:
+        with open(CHAIN_FILE, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    last = line
+        if last:
+            return json.loads(last)["hash"]
+    except Exception:
+        pass
+    return _GENESIS_HASH
+
+
+def verify_chain():
+    """Read CHAIN_FILE and verify every entry's hash and linkage.
+    Returns (ok: bool, broken_at: int | None)."""
+    if not os.path.exists(CHAIN_FILE):
+        return True, None
+    prev_hash = _GENESIS_HASH
+    try:
+        with open(CHAIN_FILE, "r") as f:
+            for idx, line in enumerate(f, start=1):
+                line = line.strip()
+                if not line:
+                    continue
+                rec = json.loads(line)
+                expected_hash = get_hash(rec["entry"] + rec["prev_hash"])
+                if rec["prev_hash"] != prev_hash or rec["hash"] != expected_hash:
+                    return False, idx
+                prev_hash = rec["hash"]
+    except Exception:
+        return False, None
+    return True, None
+
+
+def chain_append(entry_text):
+    """Append a new entry to the chain and return its hash."""
+    os.makedirs(os.path.dirname(CHAIN_FILE), exist_ok=True)
+    prev_hash = _chain_last_hash()
+    entry_hash = get_hash(entry_text + prev_hash)
+    rec = {"entry": entry_text, "hash": entry_hash, "prev_hash": prev_hash}
+    with open(CHAIN_FILE, "a") as f:
+        f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    return entry_hash
 
 
 _FILLER = ("Would you like", "Let me know", "I can assist", "Please clarify", "Next steps")
@@ -255,11 +310,13 @@ def save_history(history):
         logline(f"ERROR saving history: {e}")
 
 
-def append_log(round_count, name, anchor_hash, answer, tps):
+def append_log(round_count, name, answer, tps):
     ts = datetime.datetime.now().isoformat(timespec="seconds")
+    entry_text = f"Round {round_count} | {name} | {ts} | {answer}"
+    entry_hash = chain_append(entry_text)
     with open(LOG_FILE, "a") as f:
         f.write(f"### Round {round_count} | {name} ({ts})\n")
-        f.write(f"**Anchor-Hash (BLAKE3):** `{anchor_hash}` | **TPS:** {tps}\n\n")
+        f.write(f"**BLAKE3:** `{entry_hash}` | **TPS:** {tps}\n\n")
         f.write(f"{answer}\n\n")
 
 
@@ -276,25 +333,28 @@ def infer_round_count():
 
 
 def fetch_cve_topics():
-    """Fetch vulnerability names from CISA KEV catalog. Returns 10 topic strings or None."""
+    """Fetch vulnerability names from CISA KEV JSON feed. Returns 10 topic strings or None."""
     try:
-        r = requests.get(
-            "https://www.cisa.gov/known-exploited-vulnerabilities-catalog",
-            timeout=15,
-            headers={"User-Agent": "Mozilla/5.0"},
-        )
+        url = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
+        r = requests.get(url, timeout=15, headers={"User-Agent": "Mozilla/5.0"})
         r.raise_for_status()
-        # Extract CVE IDs with surrounding context
-        cve_ids = re.findall(r'CVE-\d{4}-\d+', r.text)
-        # Extract product/vulnerability names from table cells
-        cell_names = re.findall(r'<td[^>]*>\s*([A-Z][A-Za-z0-9 /._-]{5,60})\s*</td>', r.text)
-        candidates = list(dict.fromkeys(cve_ids + cell_names))
-        if len(candidates) < 10:
-            logline(f"[CVE fetch] too few results ({len(candidates)}), using static topics")
+        data = r.json()
+        vulns = data["vulnerabilities"]
+        if len(vulns) < 10:
+            logline(f"[CVE fetch] too few results ({len(vulns)}), using static topics")
             return None
-        selected = random.sample(candidates, 10)
-        logline(f"[CVE fetch] loaded {len(candidates)} entries, using 10 random")
-        return [f"Analyze this vulnerability: {n.strip()}" for n in selected]
+        selected = random.sample(vulns, 10)
+        logline(f"[CVE fetch] loaded {len(vulns)} entries from JSON feed, using 10 random")
+        topics = []
+        for v in selected:
+            cve_id   = v.get("cveID", "")
+            name     = v.get("vulnerabilityName", "")
+            desc     = v.get("shortDescription", "")
+            product  = v.get("product", "")
+            vendor   = v.get("vendorProject", "")
+            label = f"{cve_id} – {vendor} {product}: {name}. {desc}".strip(" –:")
+            topics.append(f"Analyze this vulnerability: {label}")
+        return topics
     except Exception as e:
         logline(f"[CVE fetch] failed: {e}")
         return None
@@ -304,6 +364,12 @@ def main():
     logline("═══ Trinity Orchestrator started ═══")
     logline(f"Discourse-Log : {LOG_FILE}")
     logline(f"Session-Log   : {SESSION_LOG}")
+
+    chain_ok, broken_at = verify_chain()
+    if chain_ok:
+        logline(f"[chain] integrity OK ({CHAIN_FILE})")
+    else:
+        logline(f"[chain] INTEGRITY BROKEN at entry {broken_at} — log may have been tampered with!")
 
     logline("Waiting for MNN Chat (port 8080)...")
     wait_for_mnn()
@@ -351,10 +417,8 @@ def main():
             history_snapshot = list(history)
 
             for name, system_prompt, color in personas:
-                anchor_hash = get_hash(last_answer)
-
                 ts = datetime.datetime.now().strftime("%H:%M:%S")
-                print(f"\n\033[90m[{ts}] Hash: {anchor_hash[:12]}...\033[0m")
+                print(f"\n\033[90m[{ts}]\033[0m")
                 print(f"{color}{name}:\033[0m ", end="", flush=True)
 
                 user_content = last_answer
@@ -399,7 +463,7 @@ def main():
                 if name == "Cipher (Critic)":
                     cipher_answer = answer
 
-                append_log(round_count, name, anchor_hash, answer, tps)
+                append_log(round_count, name, answer, tps)
                 history.append(answer)
                 round_answers.append(f"{name}: {answer[:200]}")
                 last_answer = answer
