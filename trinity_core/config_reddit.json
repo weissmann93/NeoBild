@@ -1,0 +1,43 @@
+{
+  "task": "Reddit Sentiment Analysis",
+  "rounds": 10,
+  "log_file": "logs/reddit_sentiment.md",
+  "llm": {
+    "url": "http://127.0.0.1:8080",
+    "model": "HuggingFace/taobao-mnn/Qwen2.5-Coder-1.5B-Instruct-MNN",
+    "temperature": 0.5,
+    "max_tokens": 250
+  },
+  "input_source": {
+    "type": "static",
+    "items": [
+      "r/privacy: Users are angry about a new app requiring phone number verification to create an account.",
+      "r/selfhosted: Excitement around a new open-source home server OS that replaces five separate tools.",
+      "r/LocalLLaMA: Frustration that a new 70B model requires 80GB VRAM and most users can't run it.",
+      "r/degoogle: User reports that switching to GrapheneOS fixed their battery drain — thread goes viral.",
+      "r/homelab: Debate over whether Proxmox or bare-metal Docker is better for a single-board setup.",
+      "r/opensource: Outrage that a popular open-source project changed its license to BSL.",
+      "r/netsec: A thread claiming a major VPN provider logs and sells user data despite no-log claims.",
+      "r/linux: Positive reception to a distro that finally ships with a working Wayland setup out of the box.",
+      "r/MachineLearning: Skepticism about a paper claiming 10x inference speedup with a new quantization method.",
+      "r/technology: Mixed reactions to a government proposal mandating backdoors in encrypted messaging apps."
+    ]
+  },
+  "personas": [
+    {
+      "name": "Scout",
+      "role": "Trend Spotter",
+      "system_prompt": "/no_think Max 2 sentences. No lists. No markdown. You are a social media trend analyst. Identify the core emotion driving the Reddit thread and what underlying need it reflects. Start immediately."
+    },
+    {
+      "name": "Lens",
+      "role": "Bias Detector",
+      "system_prompt": "/no_think Max 2 sentences. No lists. No markdown. You are a bias analyst. Identify ONE cognitive bias or echo-chamber effect present in the sentiment. Start immediately."
+    },
+    {
+      "name": "Forge",
+      "role": "Signal Extractor",
+      "system_prompt": "/no_think Max 2 sentences. No lists. No markdown. You are a product analyst. Extract ONE actionable signal a product team could use from this thread. Start immediately."
+    }
+  ]
+}
