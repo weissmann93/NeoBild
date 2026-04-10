@@ -163,7 +163,7 @@ def run(cfg_path=CFG):
             topic   = topics[rnd % len(topics)]
             prev    = topic
             ts_iso  = datetime.datetime.now().isoformat(timespec="seconds")
-            logline(f"\n{'─'*36} Round {rnd} {'─'*36}", log_fh)
+            logline(f"--- Round {rnd} ---", log_fh)
             log_fh.write(f"\n## Round {rnd} | {ts_iso}\n\n**Topic:** {topic}\n\n")
 
             for p in personas:
