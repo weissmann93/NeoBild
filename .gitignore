@@ -17,3 +17,4 @@ logs/
 neobild_discourse_log.md
 nohup.out
 logs/*.log
+neobild_discourse_log*.md
