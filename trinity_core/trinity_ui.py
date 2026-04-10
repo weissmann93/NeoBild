@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """TrinityCore Web UI — config editor, engine control, live log via SSE."""
-import json, os, socket, subprocess, threading, time
+import json, os, re, socket, subprocess, threading, time
 from flask import Flask, Response, request, jsonify
+
+_ANSI = re.compile(r'\x1b\[[0-9;]*[a-zA-Z]')
 
 app        = Flask(__name__)
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -40,7 +42,7 @@ def write_secret(key, value):
 
 def _reader(proc):
     for raw in iter(proc.stdout.readline, b""):
-        line = raw.decode("utf-8", errors="replace").rstrip()
+        line = _ANSI.sub("", raw.decode("utf-8", errors="replace").rstrip())
         if line:
             with _buf_lock:
                 _buf.append(line)

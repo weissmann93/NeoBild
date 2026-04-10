@@ -2,7 +2,23 @@
 """TrinityCore — universal multi-agent loop engine. Config-driven, BLAKE3-chained."""
 import json, os, re, time, random, datetime, requests, blake3
 
-CFG   = os.path.join(os.path.dirname(__file__), "config.json")
+CFG     = os.path.join(os.path.dirname(__file__), "config.json")
+SECRETS = os.path.expanduser("~/.termux_secrets")
+
+def _read_secret(key):
+    if not os.path.exists(SECRETS):
+        return ""
+    with open(SECRETS) as f:
+        for line in f:
+            k, _, v = line.strip().partition("=")
+            if k == key:
+                return v
+    return ""
+
+# Inject MNN_API_KEY into env from secrets file if not already set
+_api_key = os.environ.get("MNN_API_KEY") or _read_secret("MNN_API_KEY")
+if _api_key:
+    os.environ["MNN_API_KEY"] = _api_key
 CHAIN = os.path.join(os.path.dirname(__file__), "hashes", "chain.jsonl")
 GENESIS = "0" * 64
 
@@ -75,6 +91,7 @@ def chat(llm_cfg, system_prompt, user_content):
                       "temperature": llm_cfg.get("temperature", 0.4),
                       "max_tokens":  llm_cfg.get("max_tokens", 300),
                       "stream": True},
+                headers={"Authorization": f"Bearer {os.environ.get('MNN_API_KEY', '')}"},
                 timeout=180, stream=True,
             )
             r.raise_for_status()
