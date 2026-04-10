@@ -142,9 +142,13 @@ def fetch_topics(src):
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def truncate_to_sentences(text, max_sentences=2):
+def truncate_to_sentences(text, max_sentences=2, max_words=60):
     sentences = re.split(r'(?<=[.!?])\s+', text.strip())
-    return ' '.join(sentences[:max_sentences])
+    if len(sentences) > max_sentences:
+        return ' '.join(sentences[:max_sentences])
+    # fallback: model output had no sentence-ending punctuation
+    words = text.split()
+    return ' '.join(words[:max_words])
 
 # ── Main loop ─────────────────────────────────────────────────────────────────
 
@@ -197,6 +201,7 @@ def run(cfg_path=CFG):
                     logline(f"  {p['name']}: NO ANSWER", log_fh)
                     continue
                 answer = truncate_to_sentences(answer, 2)
+                logline(f"  [DEBUG] truncated to {len(answer.split())} words / {len(answer)} chars", log_fh)
 
                 entry_hash = chain_append(f"Round {rnd} | {p['name']} | {ts_iso} | {answer}")
                 log_fh.write(f"### {p['name']} ({p['role']})\n")

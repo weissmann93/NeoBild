@@ -40,34 +40,18 @@ def write_secret(key, value):
 
 # ── Engine process ────────────────────────────────────────────────────────────
 
-def _split_line(line, max_len=120):
-    """Split a long line at sentence boundaries ('. ') into ≤max_len chunks."""
-    if len(line) <= max_len:
-        return [line]
-    parts = []
-    buf = ""
-    for segment in re.split(r'(?<=\. )', line):
-        if buf and len(buf) + len(segment) > max_len:
-            parts.append(buf.rstrip())
-            buf = segment
-        else:
-            buf += segment
-    if buf:
-        parts.append(buf.rstrip())
-    return parts or [line]
-
 def _emit(line):
-    """Strip ANSI, split if long, append to shared buffer."""
+    """Strip ANSI and append to shared buffer — no splitting."""
     line = _ANSI.sub("", line.rstrip("\r\n"))
     if not line:
         return
     with _buf_lock:
-        for part in _split_line(line):
-            _buf.append(part)
+        _buf.append(line)
         if len(_buf) > _MAX_BUF:
             del _buf[: len(_buf) - _MAX_BUF]
 
 def _reader(proc):
+    """Read engine stdout line by line and emit each line as-is."""
     buf = ""
     while True:
         ch = proc.stdout.read(1)
@@ -79,14 +63,6 @@ def _reader(proc):
             buf = ""
         else:
             buf += ch
-            if len(buf) >= 80:
-                idx = buf.rfind(' ', 0, 80)
-                if idx > 0:
-                    _emit(buf[:idx])
-                    buf = buf[idx + 1:]
-                else:
-                    _emit(buf)
-                    buf = ""
     if buf:
         _emit(buf)
     with _buf_lock:
