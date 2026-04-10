@@ -142,8 +142,9 @@ def fetch_topics(src):
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def truncate_to_sentences(text, max_sentences=2, max_words=60):
-    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
+def truncate_to_sentences(text, max_sentences=2, max_words=40):
+    text = text.strip()
+    sentences = re.split(r'(?<=[.!?])\s+', text)
     if len(sentences) > max_sentences:
         return ' '.join(sentences[:max_sentences])
     # fallback: model output had no sentence-ending punctuation
@@ -200,6 +201,7 @@ def run(cfg_path=CFG):
                 if not answer:
                     logline(f"  {p['name']}: NO ANSWER", log_fh)
                     continue
+                answer = answer.strip()
                 print(f"[RAW] len={len(answer)} first100={answer[:100]!r}", flush=True)
                 answer = truncate_to_sentences(answer, 2)
                 print(f"[TRUNC] len={len(answer)} first100={answer[:100]!r}", flush=True)

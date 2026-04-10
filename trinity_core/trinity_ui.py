@@ -234,7 +234,6 @@ button:active{background:#222}
 #log-lines{font-size:13px;color:var(--dim)}
 #autoscroll-label{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:14px;color:var(--dim);cursor:pointer;user-select:none}
 #autoscroll-label input{width:20px;height:20px;accent-color:var(--green)}
-#log{flex:1;overflow-y:auto;padding:12px 14px;font-size:15px;line-height:1.7;white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word;color:#e0e0e0}
 .log-system{color:#444;font-style:italic}
 .log-ok{color:var(--green)}
 .log-err{color:var(--red)}
@@ -343,7 +342,7 @@ button:active{background:#222}
       <input type="checkbox" id="autoscroll" checked>auto-scroll
     </label>
   </div>
-  <div id="log" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif!important"></div>
+  <textarea id="log" readonly style="width:100%;box-sizing:border-box;resize:none;flex:1;background:#0a0a0a;color:#e0e0e0;border:none;outline:none;font-family:sans-serif;font-size:15px;line-height:1.7;padding:12px 14px;white-space:pre-wrap;word-wrap:break-word;overflow-y:auto"></textarea>
 </div>
 
 <div id="toast"></div>
@@ -501,17 +500,11 @@ async function toggleEngine() {
 // ── Live log SSE ──────────────────────────────────────────────────────────────
 
 function appendLog(text, cls='') {
-  const div = document.createElement('div');
-  if (cls) div.className = cls;
-  div.style.overflowWrap = 'anywhere';
-  div.style.wordBreak    = 'normal';
-  div.style.whiteSpace   = 'pre-wrap';
-  div.style.fontFamily   = 'inherit';
-  div.textContent = text;
-  $('log').appendChild(div);
+  const logEl = $('log');
+  logEl.value += text + '\n';
   lineCount++;
   $('log-lines').textContent = lineCount + ' lines';
-  if ($('autoscroll').checked) $('log').scrollTop = $('log').scrollHeight;
+  if ($('autoscroll').checked) logEl.scrollTop = logEl.scrollHeight;
 }
 
 function connectSSE() {
@@ -551,12 +544,6 @@ async function pollStatus() {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-(function() {
-  const log = $('log');
-  log.style.wordBreak    = 'break-word';
-  log.style.overflowWrap = 'break-word';
-  log.style.whiteSpace   = 'pre-wrap';
-})();
 loadConfig();
 loadApiKey();
 connectSSE();
