@@ -145,163 +145,209 @@ HTML = r"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TrinityCore UI</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>TrinityCore</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#0d0d0d;color:#ccc;font:13px/1.5 'Courier New',monospace;display:flex;flex-direction:column;height:100vh;overflow:hidden}
-header{background:#111;border-bottom:1px solid #222;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0}
-header h1{font-size:14px;letter-spacing:2px;color:#eee}
-.dot{width:9px;height:9px;border-radius:50%;background:#333;flex-shrink:0}
-.dot.green{background:#00ff41}.dot.red{background:#ff4444}
-.label{font-size:11px;color:#555}
-.main{display:flex;flex:1;overflow:hidden}
-.panel{padding:14px;overflow-y:auto}
-.left{width:42%;border-right:1px solid #1a1a1a;flex-shrink:0}
-.right{flex:1;display:flex;flex-direction:column}
-section{margin-bottom:18px}
-h2{font-size:11px;letter-spacing:1px;color:#555;text-transform:uppercase;margin-bottom:8px;border-bottom:1px solid #1a1a1a;padding-bottom:4px}
-label{display:block;font-size:11px;color:#888;margin-bottom:3px}
-input[type=text],input[type=number],input[type=password],select,textarea{width:100%;background:#111;border:1px solid #222;color:#ccc;padding:5px 7px;font:12px/1.4 'Courier New',monospace;border-radius:3px;outline:none;resize:vertical}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{--bg:#0d0d0d;--bg2:#111;--bg3:#1a1a1a;--border:#222;--text:#ccc;--dim:#666;--green:#00ff41;--red:#ff4444;--accent:#00ff41}
+body{background:var(--bg);color:var(--text);font:16px/1.5 'Courier New',monospace;display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+
+/* ── Topbar (always visible) ── */
+#topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+#topbar h1{font-size:13px;letter-spacing:2px;color:#eee;white-space:nowrap}
+.dot{width:10px;height:10px;border-radius:50%;background:#333;flex-shrink:0}
+.dot.green{background:var(--green)}.dot.red{background:var(--red)}
+.dot-label{font-size:12px;color:var(--dim)}
+#btn-engine{margin-left:auto;padding:10px 18px;font:15px 'Courier New',monospace;border-radius:4px;border:1px solid;cursor:pointer;white-space:nowrap;min-height:44px}
+.btn-start{border-color:#00ff4166;color:var(--green);background:transparent}
+.btn-stop{border-color:#ff444466;color:var(--red);background:transparent}
+
+/* ── Tabs ── */
+#tabbar{background:var(--bg2);border-bottom:2px solid var(--border);display:flex;flex-shrink:0}
+.tab{flex:1;padding:14px 0;text-align:center;font:14px 'Courier New',monospace;color:var(--dim);cursor:pointer;letter-spacing:1px;border-bottom:2px solid transparent;margin-bottom:-2px;user-select:none}
+.tab.active{color:var(--green);border-bottom-color:var(--green)}
+
+/* ── Tab panels ── */
+.panel{display:none;flex:1;overflow-y:auto;padding:16px 14px}
+.panel.active{display:block}
+#tab-log.active{display:flex;flex-direction:column;padding:0}
+
+/* ── Form elements ── */
+section{margin-bottom:22px}
+h2{font-size:12px;letter-spacing:1px;color:var(--dim);text-transform:uppercase;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:5px}
+label{display:block;font-size:14px;color:#888;margin-bottom:5px}
+input[type=text],input[type=number],input[type=password],select,textarea{
+  width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);
+  padding:12px;font:16px 'Courier New',monospace;border-radius:4px;outline:none;
+  resize:vertical;-webkit-appearance:none;appearance:none}
 input:focus,textarea:focus,select:focus{border-color:#444}
-textarea{min-height:54px}
-.row{display:flex;gap:8px}
-.row>*{flex:1}
-.check-row{display:flex;align-items:center;gap:8px;margin-top:4px}
-.check-row input{width:auto}
-.check-row span{font-size:12px;color:#999}
-/* Personas */
-.persona-card{background:#111;border:1px solid #1e1e1e;border-radius:4px;padding:10px;margin-bottom:8px}
-.persona-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.persona-header span{color:#00ff41;font-size:12px}
-.rm-btn{background:none;border:none;color:#555;cursor:pointer;font-size:14px;padding:0 4px}
-.rm-btn:hover{color:#ff4444}
-/* Buttons */
-btn,button{font:12px 'Courier New',monospace;border-radius:3px;cursor:pointer;padding:6px 14px;border:1px solid #333;background:#1a1a1a;color:#ccc}
-button:hover{background:#222;color:#eee}
-.btn-save{border-color:#00ff4155;color:#00ff41}
-.btn-save:hover{background:#00ff4115}
-.btn-start{border-color:#00ff4155;color:#00ff41}
-.btn-start:hover{background:#00ff4115}
-.btn-stop{border-color:#ff444455;color:#ff4444}
-.btn-stop:hover{background:#ff444415}
-.btn-add{border-color:#3a3a3a;color:#888;font-size:11px;width:100%;margin-top:4px}
-.controls{display:flex;gap:8px;margin-top:6px}
-/* Log */
-.log-header{padding:8px 14px;border-bottom:1px solid #1a1a1a;display:flex;align-items:center;gap:10px;flex-shrink:0}
-.log-header h2{border:none;margin:0;padding:0}
-#log{flex:1;overflow-y:auto;padding:10px 14px;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+textarea{min-height:80px}
+.field{margin-bottom:14px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.check-row{display:flex;align-items:center;gap:12px;padding:10px 0}
+.check-row input[type=checkbox]{width:22px;height:22px;accent-color:var(--green);flex-shrink:0}
+.check-row span{font-size:16px;color:#999}
+
+/* ── Buttons ── */
+button{font:16px 'Courier New',monospace;border-radius:4px;cursor:pointer;
+  padding:12px 18px;border:1px solid var(--border);background:var(--bg3);color:var(--text);
+  width:100%;min-height:48px;margin-top:8px}
+button:active{background:#222}
+.btn-save{border-color:#00ff4155;color:var(--green)}
+.btn-secondary{color:#888;font-size:14px}
+.btn-danger{border-color:#ff444455;color:var(--red)}
+
+/* ── Persona cards ── */
+.persona-card{background:var(--bg2);border:1px solid #1e1e1e;border-radius:6px;padding:14px;margin-bottom:12px}
+.persona-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.persona-hdr span{color:var(--green);font-size:13px;letter-spacing:1px}
+.rm-btn{background:none;border:none;color:var(--dim);cursor:pointer;font-size:22px;padding:0 6px;width:auto;min-height:auto;margin:0}
+
+/* ── Log panel ── */
+#log-toolbar{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;background:var(--bg2)}
+#log-lines{font-size:13px;color:var(--dim)}
+#autoscroll-label{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:14px;color:var(--dim);cursor:pointer;user-select:none}
+#autoscroll-label input{width:20px;height:20px;accent-color:var(--green)}
+#log{flex:1;overflow-y:auto;padding:12px 14px;font-size:15px;line-height:1.7;white-space:pre-wrap;word-break:break-all}
 .log-system{color:#444;font-style:italic}
-.log-ok{color:#00ff41}
-.log-err{color:#ff4444}
-footer{background:#111;border-top:1px solid #1a1a1a;padding:5px 14px;font-size:10px;color:#333;flex-shrink:0;display:flex;justify-content:space-between}
-#autoscroll-label{cursor:pointer;color:#444;user-select:none}
-#autoscroll-label:hover{color:#666}
-#autoscroll-label input{margin-right:4px}
+.log-ok{color:var(--green)}
+.log-err{color:var(--red)}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:#1a1a1a;border:1px solid #333;color:#ccc;padding:10px 20px;
+  border-radius:6px;font-size:14px;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+#toast.show{opacity:1}
 </style>
 </head>
 <body>
-<header>
-  <h1>TRINITY CORE</h1>
-  <div class="dot" id="dot-mnn" title="MNN Chat :8080"></div>
-  <span class="label" id="lbl-mnn">MNN</span>
-  <div class="dot" id="dot-eng" title="Engine"></div>
-  <span class="label" id="lbl-eng">ENGINE</span>
-  <span style="margin-left:auto;font-size:11px;color:#333" id="hdr-task"></span>
-</header>
 
-<div class="main">
-<!-- ── LEFT: config ── -->
-<div class="left panel" id="config-panel">
+<!-- Always-visible top bar -->
+<div id="topbar">
+  <h1>TRINITY</h1>
+  <div class="dot" id="dot-mnn"></div>
+  <span class="dot-label" id="lbl-mnn">MNN</span>
+  <div class="dot" id="dot-eng"></div>
+  <span class="dot-label" id="lbl-eng">ENG</span>
+  <button id="btn-engine" class="btn-start" onclick="toggleEngine()">START</button>
+</div>
 
-<section>
-  <h2>General</h2>
-  <label>Task</label>
-  <input type="text" id="f-task" placeholder="task description">
-  <div class="row" style="margin-top:8px">
-    <div><label>Rounds</label><input type="number" id="f-rounds" min="1" value="10" style="width:80px"></div>
-    <div><label>Log file</label><input type="text" id="f-logfile" placeholder="logs/trinity.md"></div>
-  </div>
-  <div class="check-row" style="margin-top:8px">
-    <input type="checkbox" id="f-blake3" checked>
-    <span>BLAKE3 hash-chaining</span>
-  </div>
-</section>
+<!-- Tab bar -->
+<div id="tabbar">
+  <div class="tab active" onclick="showTab('config')">CONFIG</div>
+  <div class="tab" onclick="showTab('personas')">PERSONAS</div>
+  <div class="tab" onclick="showTab('log')">LOG</div>
+</div>
 
-<section>
-  <h2>LLM</h2>
-  <div class="row">
-    <div><label>URL</label><input type="text" id="f-llm-url" value="http://127.0.0.1:8080"></div>
-    <div><label>Temp</label><input type="number" id="f-llm-temp" min="0" max="2" step="0.05" value="0.4" style="width:70px"></div>
-    <div><label>Max tokens</label><input type="number" id="f-llm-tokens" min="50" value="300" style="width:80px"></div>
-  </div>
-  <label style="margin-top:8px">Model</label>
-  <input type="text" id="f-llm-model" placeholder="model name">
-</section>
+<!-- CONFIG tab -->
+<div class="panel active" id="tab-config">
 
-<section>
-  <h2>Input Source</h2>
-  <label>Type</label>
-  <select id="f-src-type" onchange="toggleSrcFields()">
-    <option value="static">static</option>
-    <option value="cisa_json">cisa_json</option>
-  </select>
-  <div id="src-url-row" style="display:none;margin-top:8px">
-    <label>URL</label>
-    <input type="text" id="f-src-url">
-  </div>
-  <div id="src-items-row" style="margin-top:8px">
-    <label>Items (one per line)</label>
-    <textarea id="f-src-items" rows="4"></textarea>
-  </div>
-</section>
+  <section>
+    <h2>General</h2>
+    <div class="field"><label>Task</label><input type="text" id="f-task" placeholder="task description"></div>
+    <div class="row2">
+      <div class="field"><label>Rounds</label><input type="number" id="f-rounds" min="1" value="10"></div>
+      <div class="field"><label>Log file</label><input type="text" id="f-logfile" placeholder="logs/trinity.md"></div>
+    </div>
+    <div class="check-row">
+      <input type="checkbox" id="f-blake3" checked>
+      <span>BLAKE3 hash-chaining</span>
+    </div>
+  </section>
 
-<section>
-  <h2>Personas</h2>
-  <div id="personas-list"></div>
-  <button class="btn-add" onclick="addPersona()">+ Add Persona</button>
-</section>
+  <section>
+    <h2>LLM</h2>
+    <div class="field"><label>URL</label><input type="text" id="f-llm-url" value="http://127.0.0.1:8080"></div>
+    <div class="field"><label>Model</label><input type="text" id="f-llm-model" placeholder="model name"></div>
+    <div class="row2">
+      <div class="field"><label>Temperature</label><input type="number" id="f-llm-temp" min="0" max="2" step="0.05" value="0.4"></div>
+      <div class="field"><label>Max tokens</label><input type="number" id="f-llm-tokens" min="50" value="300"></div>
+    </div>
+  </section>
 
-<section>
-  <h2>API Key</h2>
-  <label>MNN_API_KEY (~/.termux_secrets)</label>
-  <input type="password" id="f-apikey" placeholder="leave empty if not needed">
-  <button style="margin-top:6px" onclick="saveApiKey()">Save Key</button>
-</section>
+  <section>
+    <h2>Input Source</h2>
+    <div class="field"><label>Type</label>
+      <select id="f-src-type" onchange="toggleSrcFields()">
+        <option value="static">static</option>
+        <option value="cisa_json">cisa_json</option>
+      </select>
+    </div>
+    <div class="field" id="src-url-row" style="display:none">
+      <label>URL</label><input type="text" id="f-src-url">
+    </div>
+    <div class="field" id="src-items-row">
+      <label id="src-items-label">Items (one per line)</label>
+      <textarea id="f-src-items" rows="5"></textarea>
+    </div>
+  </section>
 
-<div class="controls">
+  <section>
+    <h2>Config File</h2>
+    <div class="field"><label>Path (leave empty for default)</label>
+      <input type="text" id="f-cfgpath" placeholder="…/trinity_core/config.json">
+    </div>
+  </section>
+
+  <section>
+    <h2>API Key</h2>
+    <div class="field"><label>MNN_API_KEY (~/.termux_secrets)</label>
+      <input type="password" id="f-apikey" placeholder="leave empty if not needed">
+    </div>
+    <button class="btn-secondary" onclick="saveApiKey()">Save API Key</button>
+  </section>
+
   <button class="btn-save" onclick="saveConfig()">Save Config</button>
-  <button class="btn-start" id="btn-engine" onclick="toggleEngine()">Start Engine</button>
-</div>
-<div style="margin-top:8px">
-  <label>Config file to run</label>
-  <input type="text" id="f-cfgpath" value="" placeholder="leave empty for default config.json">
+  <div style="height:20px"></div>
 </div>
 
-</div><!-- /left -->
+<!-- PERSONAS tab -->
+<div class="panel" id="tab-personas">
+  <div id="personas-list"></div>
+  <button class="btn-secondary" onclick="addPersona()">+ Add Persona</button>
+  <button class="btn-save" onclick="saveConfig(true)">Save Config</button>
+  <div style="height:20px"></div>
+</div>
 
-<!-- ── RIGHT: log ── -->
-<div class="right">
-  <div class="log-header">
-    <h2>LIVE LOG</h2>
-    <span id="log-lines" style="font-size:10px;color:#333">0 lines</span>
-    <label id="autoscroll-label" style="margin-left:auto">
+<!-- LOG tab -->
+<div class="panel" id="tab-log">
+  <div id="log-toolbar">
+    <span id="log-lines">0 lines</span>
+    <label id="autoscroll-label">
       <input type="checkbox" id="autoscroll" checked>auto-scroll
     </label>
   </div>
   <div id="log"></div>
 </div>
-</div><!-- /main -->
 
-<footer>
-  <span>TrinityCore UI</span>
-  <span id="footer-status">idle</span>
-</footer>
+<div id="toast"></div>
 
 <script>
 const $ = id => document.getElementById(id);
 let lineCount = 0;
 let engineRunning = false;
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const names = ['config','personas','log'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  $('tab-' + name).classList.add('active');
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+
+function toast(msg, ok=true) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.style.borderColor = ok ? '#00ff4155' : '#ff444455';
+  t.style.color = ok ? '#00ff41' : '#ff4444';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
 
 // ── Config load/save ──────────────────────────────────────────────────────────
 
@@ -309,46 +355,43 @@ async function loadConfig() {
   const r = await fetch('/api/config');
   if (!r.ok) return;
   const c = await r.json();
-  $('f-task').value      = c.task || '';
-  $('f-rounds').value    = c.rounds || 10;
-  $('f-logfile').value   = c.log_file || 'logs/trinity.md';
-  $('f-blake3').checked  = c.log_blake3 !== false;
-  $('hdr-task').textContent = c.task || '';
+  $('f-task').value     = c.task || '';
+  $('f-rounds').value   = c.rounds || 10;
+  $('f-logfile').value  = c.log_file || 'logs/trinity.md';
+  $('f-blake3').checked = c.log_blake3 !== false;
   if (c.llm) {
-    $('f-llm-url').value    = c.llm.url    || 'http://127.0.0.1:8080';
-    $('f-llm-model').value  = c.llm.model  || '';
+    $('f-llm-url').value    = c.llm.url || 'http://127.0.0.1:8080';
+    $('f-llm-model').value  = c.llm.model || '';
     $('f-llm-temp').value   = c.llm.temperature ?? 0.4;
-    $('f-llm-tokens').value = c.llm.max_tokens  || 300;
+    $('f-llm-tokens').value = c.llm.max_tokens || 300;
   }
   const src = c.input_source || {};
   $('f-src-type').value = src.type || 'static';
   toggleSrcFields();
-  if (src.url)   $('f-src-url').value = src.url;
-  const items = src.items || src.fallback || [];
-  $('f-src-items').value = items.join('\n');
-  // personas
+  if (src.url) $('f-src-url').value = src.url;
+  $('f-src-items').value = (src.items || src.fallback || []).join('\n');
   $('personas-list').innerHTML = '';
   (c.personas || []).forEach(p => addPersona(p));
-  // cfgpath default
-  if (!$('f-cfgpath').value) $('f-cfgpath').value = '/data/data/com.termux/files/home/NeoBild/trinity_core/config.json';
+  if (!$('f-cfgpath').value)
+    $('f-cfgpath').value = '/data/data/com.termux/files/home/NeoBild/trinity_core/config.json';
 }
 
 function buildConfig() {
   const src_type = $('f-src-type').value;
   const items = $('f-src-items').value.split('\n').map(s=>s.trim()).filter(Boolean);
   const src = src_type === 'cisa_json'
-    ? { type: 'cisa_json', url: $('f-src-url').value, fallback: items }
-    : { type: 'static', items };
+    ? {type:'cisa_json', url:$('f-src-url').value, fallback:items}
+    : {type:'static', items};
   const personas = [...document.querySelectorAll('.persona-card')].map(card => ({
     name:          card.querySelector('.p-name').value,
     role:          card.querySelector('.p-role').value,
     system_prompt: card.querySelector('.p-prompt').value,
   }));
   return {
-    task:         $('f-task').value,
-    rounds:       parseInt($('f-rounds').value) || 10,
-    log_file:     $('f-logfile').value || 'logs/trinity.md',
-    log_blake3:   $('f-blake3').checked,
+    task:       $('f-task').value,
+    rounds:     parseInt($('f-rounds').value) || 10,
+    log_file:   $('f-logfile').value || 'logs/trinity.md',
+    log_blake3: $('f-blake3').checked,
     llm: {
       url:         $('f-llm-url').value,
       model:       $('f-llm-model').value,
@@ -360,54 +403,55 @@ function buildConfig() {
   };
 }
 
-async function saveConfig() {
-  const cfg = buildConfig();
-  $('hdr-task').textContent = cfg.task;
-  const r = await fetch('/api/config', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(cfg) });
+async function saveConfig(switchToLog=false) {
+  const r = await fetch('/api/config', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(buildConfig())
+  });
   const d = await r.json();
+  toast(d.ok ? 'Config saved' : 'Save failed', d.ok);
   appendLog(d.ok ? '[config saved]' : '[save failed]', d.ok ? 'log-ok' : 'log-err');
-  $('footer-status').textContent = d.ok ? 'config saved' : 'save error';
 }
 
 // ── Personas ──────────────────────────────────────────────────────────────────
 
-function addPersona(p = {}) {
+function addPersona(p={}) {
   const card = document.createElement('div');
   card.className = 'persona-card';
   card.innerHTML = `
-    <div class="persona-header">
+    <div class="persona-hdr">
       <span>PERSONA</span>
       <button class="rm-btn" onclick="this.closest('.persona-card').remove()">✕</button>
     </div>
-    <div class="row">
-      <div><label>Name</label><input class="p-name" type="text" value="${esc(p.name||'')}"></div>
-      <div><label>Role</label><input class="p-role" type="text" value="${esc(p.role||'')}"></div>
+    <div class="row2">
+      <div class="field"><label>Name</label><input class="p-name" type="text" value="${esc(p.name||'')}"></div>
+      <div class="field"><label>Role</label><input class="p-role" type="text" value="${esc(p.role||'')}"></div>
     </div>
-    <label style="margin-top:6px">System Prompt</label>
-    <textarea class="p-prompt">${esc(p.system_prompt||'')}</textarea>`;
+    <div class="field"><label>System Prompt</label><textarea class="p-prompt">${esc(p.system_prompt||'')}</textarea></div>`;
   $('personas-list').appendChild(card);
 }
 
-function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 
 // ── Input source toggle ───────────────────────────────────────────────────────
 
 function toggleSrcFields() {
   const isCisa = $('f-src-type').value === 'cisa_json';
-  $('src-url-row').style.display   = isCisa ? 'block' : 'none';
-  $('src-items-row').querySelector('label').textContent = isCisa ? 'Fallback items (one per line)' : 'Items (one per line)';
+  $('src-url-row').style.display = isCisa ? 'block' : 'none';
+  $('src-items-label').textContent = isCisa ? 'Fallback items (one per line)' : 'Items (one per line)';
 }
 
 // ── API key ───────────────────────────────────────────────────────────────────
 
 async function loadApiKey() {
-  const r = await fetch('/api/apikey');
-  const d = await r.json();
+  const d = await (await fetch('/api/apikey')).json();
   $('f-apikey').value = d.value || '';
 }
 
 async function saveApiKey() {
-  await fetch('/api/apikey', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({value: $('f-apikey').value}) });
+  await fetch('/api/apikey', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({value: $('f-apikey').value})});
+  toast('API key saved');
   appendLog('[API key saved]', 'log-ok');
 }
 
@@ -415,12 +459,16 @@ async function saveApiKey() {
 
 async function toggleEngine() {
   if (engineRunning) {
-    await fetch('/api/stop', { method:'POST' });
+    await fetch('/api/stop', {method:'POST'});
     appendLog('[stop requested]', 'log-system');
+    toast('Engine stopping', false);
   } else {
-    const cfgpath = $('f-cfgpath').value.trim();
-    await fetch('/api/start', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({config: cfgpath || undefined}) });
+    const cfg = $('f-cfgpath').value.trim();
+    await fetch('/api/start', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({config: cfg || undefined})});
     appendLog('[engine starting...]', 'log-ok');
+    toast('Engine starting');
+    showTab('log');
   }
 }
 
@@ -442,8 +490,7 @@ function connectSSE() {
     const t = e.data;
     const cls = t.startsWith('[engine') ? 'log-system'
               : t.includes('ERROR') || t.includes('BROKEN') ? 'log-err'
-              : t.includes('Chain:') || t.includes('[chain]') ? 'log-ok'
-              : '';
+              : t.includes('Chain:') || t.includes('[chain]') ? 'log-ok' : '';
     appendLog(t, cls);
   };
   es.onerror = () => {
@@ -457,24 +504,19 @@ function connectSSE() {
 
 async function pollStatus() {
   try {
-    const r = await fetch('/api/status');
-    const d = await r.json();
-    // MNN
+    const d = await (await fetch('/api/status')).json();
     $('dot-mnn').className = 'dot ' + (d.mnn ? 'green' : 'red');
-    $('lbl-mnn').textContent = 'MNN ' + (d.mnn ? '●' : '○');
-    // Engine
+    $('lbl-mnn').textContent = 'MNN';
     engineRunning = d.engine;
     $('dot-eng').className = 'dot ' + (d.engine ? 'green' : 'red');
-    $('lbl-eng').textContent = 'ENGINE ' + (d.engine ? '●' : '○');
-    $('btn-engine').textContent  = d.engine ? 'Stop Engine' : 'Start Engine';
-    $('btn-engine').className    = d.engine ? 'btn-stop' : 'btn-start';
-    $('footer-status').textContent = d.engine ? 'running' : 'idle';
+    $('lbl-eng').textContent = 'ENG';
+    $('btn-engine').textContent = d.engine ? 'STOP' : 'START';
+    $('btn-engine').className   = d.engine ? 'btn-stop' : 'btn-start';
   } catch(_) {}
   setTimeout(pollStatus, 4000);
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-
 loadConfig();
 loadApiKey();
 connectSSE();
