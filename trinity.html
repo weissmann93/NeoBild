@@ -297,49 +297,6 @@ main {
   color: rgba(0,255,136,0.35);
 }
 
-/* ── UPLOAD SCREEN ─────────────────────── */
-#upload-screen {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 70vh;
-  gap: 20px;
-  padding: 40px;
-}
-
-.drop-zone {
-  border: 1px dashed var(--muted);
-  border-radius: 4px;
-  padding: 48px 60px;
-  text-align: center;
-  cursor: pointer;
-  transition: all .2s;
-  max-width: 500px;
-  width: 100%;
-}
-.drop-zone:hover, .drop-zone.drag { border-color: var(--accent); }
-.drop-zone .icon { font-size: 32px; margin-bottom: 12px; opacity: .5; }
-.drop-zone p { font-size: 12px; color: var(--muted); letter-spacing: 1px; line-height: 1.8; }
-.drop-zone p b { color: var(--accent); }
-
-#file-input { display: none; }
-
-.load-btn {
-  background: var(--accent);
-  color: #000;
-  border: none;
-  font-family: var(--font);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  padding: 10px 24px;
-  cursor: pointer;
-  text-transform: uppercase;
-  transition: all .15s;
-}
-.load-btn:hover { background: #00ffaa; }
-
 /* ── NO RESULTS ─────────────────────────── */
 .no-results {
   padding: 60px;
@@ -352,7 +309,7 @@ main {
 
 /* ── LOADING ────────────────────────────── */
 #loading {
-  display: none;
+  display: block;
   padding: 40px;
   text-align: center;
   color: var(--muted);
@@ -369,7 +326,6 @@ main {
   .round-header { padding: 10px 14px; }
   .round-entries { grid-template-columns: 1fr; }
   .entry { padding: 14px; }
-  .drop-zone { padding: 32px 20px; }
 }
 </style>
 </head>
@@ -405,21 +361,7 @@ main {
   <button class="filter-btn" onclick="collapseAll()" style="--color:#888">COLLAPSE</button>
 </div>
 
-<div id="loading">PARSING LOG...</div>
-
-<div id="upload-screen">
-  <div class="drop-zone" id="dropZone" onclick="document.getElementById('file-input').click()"
-    ondragover="e=>{e.preventDefault();this.classList.add('drag')}"
-    ondragleave="this.classList.remove('drag')"
-    ondrop="handleDrop(event)">
-    <div class="icon">⬡</div>
-    <p>Drop <b>neobild_discourse_log_blake3*.md</b> here<br>or click to select file</p>
-  </div>
-  <input type="file" id="file-input" accept=".md,.txt" onchange="handleFile(this.files[0])">
-  <p style="font-size:10px;color:var(--muted);letter-spacing:1px;text-align:center">
-    File stays local — nothing is uploaded anywhere
-  </p>
-</div>
+<div id="loading">FETCHING LOG...</div>
 
 <main id="main" style="display:none"></main>
 
@@ -435,25 +377,21 @@ let allRounds = [];
 let activePersona = 'ALL';
 let searchQuery = '';
 
-// ── File handling ──────────────────────────────────────
-function handleDrop(e) {
-  e.preventDefault();
-  document.getElementById('dropZone').classList.remove('drag');
-  const f = e.dataTransfer.files[0];
-  if (f) handleFile(f);
-}
-
-function handleFile(file) {
-  if (!file) return;
-  document.getElementById('loading').style.display = 'block';
-  document.getElementById('upload-screen').style.display = 'none';
-  const reader = new FileReader();
-  reader.onload = e => {
-    allRounds = parseLog(e.target.result);
-    renderAll();
-  };
-  reader.readAsText(file);
-}
+// ── Auto-fetch log on load ─────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  fetch('neobild_discourse_log_blake3.md')
+    .then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    })
+    .then(text => {
+      allRounds = parseLog(text);
+      renderAll();
+    })
+    .catch(err => {
+      document.getElementById('loading').textContent = 'ERROR: ' + err.message;
+    });
+});
 
 // ── Parser ─────────────────────────────────────────────
 function parseLog(text) {
