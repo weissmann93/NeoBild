@@ -161,17 +161,31 @@ def run(cfg_path=CFG):
 
         for rnd in range(1, rounds + 1):
             topic   = topics[rnd % len(topics)]
-            prev    = topic
             ts_iso  = datetime.datetime.now().isoformat(timespec="seconds")
             logline(f"--- Round {rnd} ---", log_fh)
             log_fh.write(f"\n## Round {rnd} | {ts_iso}\n\n**Topic:** {topic}\n\n")
+
+            context = ""  # accumulates each agent's output within the round
 
             for p in personas:
                 tail = chain_tail()
                 print(f"\n\033[90m[{ts()}] Chain: {tail[:12]}...\033[0m", flush=True)
                 print(f"\033[96m{p['name']}:\033[0m ", end="", flush=True)
 
-                answer = chat(llm, p["system_prompt"], prev)
+                # Build user prompt: topic as context only, plus prior agents' outputs
+                user_prompt = (
+                    f"Analyze the following security topic and provide your perspective. "
+                    f"Do NOT repeat or restate the topic title in your response. "
+                    f"Topic: {topic}"
+                )
+                if context:
+                    user_prompt = (
+                        f"Previous analysis in this round:\n{context}\n"
+                        f"Your turn -- respond to and build on the above.\n\n"
+                        f"Topic (for reference only, do not restate): {topic}"
+                    )
+
+                answer = chat(llm, p["system_prompt"], user_prompt)
                 if not answer:
                     logline(f"  {p['name']}: NO ANSWER", log_fh)
                     continue
@@ -181,7 +195,7 @@ def run(cfg_path=CFG):
                 log_fh.write(f"**BLAKE3:** `{entry_hash}`\n\n{answer}\n\n")
                 log_fh.flush()
                 logline(f"  {p['name']}: ok", log_fh)
-                prev = answer
+                context += f"{p['name']}: {answer}\n"
 
             time.sleep(2)
 

@@ -258,7 +258,7 @@ button:active{background:#222}
 #log-lines{font-size:13px;color:var(--dim)}
 #autoscroll-label{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:14px;color:var(--dim);cursor:pointer;user-select:none}
 #autoscroll-label input{width:20px;height:20px;accent-color:var(--green)}
-#log{flex:1;overflow-y:auto;padding:12px 14px;font-size:15px;line-height:1.7;white-space:pre-wrap;word-break:break-all;color:#e0e0e0}
+#log{flex:1;overflow-y:auto;padding:12px 14px;font-size:15px;line-height:1.7;white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word;color:#e0e0e0}
 .log-system{color:#444;font-style:italic}
 .log-ok{color:var(--green)}
 .log-err{color:var(--red)}
