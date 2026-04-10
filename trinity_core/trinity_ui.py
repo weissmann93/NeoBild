@@ -167,6 +167,8 @@ HTML = r"""<!DOCTYPE html>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>TrinityCore</title>
 <style>
+*{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif !important}
+#log,#log *,.p-prompt{font-family:'Courier New',monospace !important}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{--bg:#0d0d0d;--bg2:#111;--bg3:#1a1a1a;--border:#222;--text:#ccc;--dim:#666;--green:#00ff41;--red:#ff4444;--accent:#00ff41;--ui-font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--mono:'Courier New',monospace}
 body{background:var(--bg);color:var(--text);font:16px/1.5 var(--ui-font);font-family:var(--ui-font) !important;display:flex;flex-direction:column;height:100dvh;overflow:hidden}
