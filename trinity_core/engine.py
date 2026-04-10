@@ -200,7 +200,9 @@ def run(cfg_path=CFG):
                 if not answer:
                     logline(f"  {p['name']}: NO ANSWER", log_fh)
                     continue
+                print(f"[RAW] len={len(answer)} first100={answer[:100]!r}", flush=True)
                 answer = truncate_to_sentences(answer, 2)
+                print(f"[TRUNC] len={len(answer)} first100={answer[:100]!r}", flush=True)
                 logline(f"  [DEBUG] truncated to {len(answer.split())} words / {len(answer)} chars", log_fh)
 
                 entry_hash = chain_append(f"Round {rnd} | {p['name']} | {ts_iso} | {answer}")

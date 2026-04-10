@@ -503,8 +503,8 @@ async function toggleEngine() {
 function appendLog(text, cls='') {
   const div = document.createElement('div');
   if (cls) div.className = cls;
-  div.style.wordBreak    = 'break-word';
-  div.style.overflowWrap = 'break-word';
+  div.style.overflowWrap = 'anywhere';
+  div.style.wordBreak    = 'normal';
   div.style.whiteSpace   = 'pre-wrap';
   div.style.fontFamily   = 'inherit';
   div.textContent = text;
