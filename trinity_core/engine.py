@@ -140,6 +140,12 @@ def fetch_topics(src):
             return src.get("fallback", ["Analyze a recent critical CVE."])
     raise ValueError(f"Unknown input_source type: {kind}")
 
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def truncate_to_sentences(text, max_sentences=2):
+    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
+    return ' '.join(sentences[:max_sentences])
+
 # ── Main loop ─────────────────────────────────────────────────────────────────
 
 def run(cfg_path=CFG):
@@ -190,6 +196,7 @@ def run(cfg_path=CFG):
                 if not answer:
                     logline(f"  {p['name']}: NO ANSWER", log_fh)
                     continue
+                answer = truncate_to_sentences(answer, 2)
 
                 entry_hash = chain_append(f"Round {rnd} | {p['name']} | {ts_iso} | {answer}")
                 log_fh.write(f"### {p['name']} ({p['role']})\n")
