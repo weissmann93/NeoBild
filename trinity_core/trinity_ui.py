@@ -178,11 +178,12 @@ body{background:var(--bg);color:var(--text);font:16px/1.5 var(--ui-font);display
 section{margin-bottom:22px}
 h2{font:700 12px var(--ui-font);letter-spacing:1px;color:var(--green);text-transform:uppercase;margin-bottom:10px;border-bottom:1px solid #1e1e1e;padding-bottom:5px}
 label{display:block;font:15px var(--ui-font);color:#aaaaaa;margin-bottom:5px}
-input[type=text],input[type=number],input[type=password],select,textarea{
+input[type=text],input[type=number],input[type=password],select,textarea:not(.p-prompt){
   width:100%;background:#1a1a1a;border:1px solid #444;color:#ffffff;
   padding:12px;font:16px var(--ui-font);border-radius:4px;outline:none;
   resize:vertical;-webkit-appearance:none;appearance:none}
-.p-prompt{font-family:var(--mono) !important}
+.p-prompt{width:100%;background:#1a1a1a;border:1px solid #444;color:#ffffff;
+  padding:12px;font:16px var(--mono);border-radius:4px;outline:none;resize:vertical}
 input:focus,textarea:focus,select:focus{border-color:#444}
 textarea{min-height:80px}
 .field{margin-bottom:14px}
