@@ -40,12 +40,29 @@ def write_secret(key, value):
 
 # ── Engine process ────────────────────────────────────────────────────────────
 
+def _split_line(line, max_len=120):
+    """Split a long line at sentence boundaries ('. ') into ≤max_len chunks."""
+    if len(line) <= max_len:
+        return [line]
+    parts = []
+    buf = ""
+    for segment in re.split(r'(?<=\. )', line):
+        if buf and len(buf) + len(segment) > max_len:
+            parts.append(buf.rstrip())
+            buf = segment
+        else:
+            buf += segment
+    if buf:
+        parts.append(buf.rstrip())
+    return parts or [line]
+
 def _reader(proc):
     for raw in iter(proc.stdout.readline, b""):
         line = _ANSI.sub("", raw.decode("utf-8", errors="replace").rstrip())
         if line:
             with _buf_lock:
-                _buf.append(line)
+                for part in _split_line(line):
+                    _buf.append(part)
                 if len(_buf) > _MAX_BUF:
                     del _buf[: len(_buf) - _MAX_BUF]
     with _buf_lock:
@@ -152,7 +169,7 @@ HTML = r"""<!DOCTYPE html>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{--bg:#0d0d0d;--bg2:#111;--bg3:#1a1a1a;--border:#222;--text:#ccc;--dim:#666;--green:#00ff41;--red:#ff4444;--accent:#00ff41;--ui-font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--mono:'Courier New',monospace}
-body{background:var(--bg);color:var(--text);font:16px/1.5 var(--ui-font);display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+body{background:var(--bg);color:var(--text);font:16px/1.5 var(--ui-font);font-family:var(--ui-font) !important;display:flex;flex-direction:column;height:100dvh;overflow:hidden}
 
 /* ── Topbar (always visible) ── */
 #topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0}
@@ -160,13 +177,13 @@ body{background:var(--bg);color:var(--text);font:16px/1.5 var(--ui-font);display
 .dot{width:10px;height:10px;border-radius:50%;background:#333;flex-shrink:0}
 .dot.green{background:var(--green)}.dot.red{background:var(--red)}
 .dot-label{font-size:12px;color:var(--dim)}
-#btn-engine{margin-left:auto;padding:10px 18px;font:600 15px var(--ui-font);border-radius:4px;border:1px solid;cursor:pointer;white-space:nowrap;min-height:44px}
+#btn-engine{margin-left:auto;padding:10px 18px;font:600 15px var(--ui-font);font-family:var(--ui-font) !important;border-radius:4px;border:1px solid;cursor:pointer;white-space:nowrap;min-height:44px}
 .btn-start{border-color:#00ff4166;color:var(--green);background:transparent}
 .btn-stop{border-color:#ff444466;color:var(--red);background:transparent}
 
 /* ── Tabs ── */
 #tabbar{background:var(--bg2);border-bottom:2px solid var(--border);display:flex;flex-shrink:0}
-.tab{flex:1;padding:14px 0;text-align:center;font:600 14px var(--ui-font);color:#555;cursor:pointer;letter-spacing:1px;border-bottom:2px solid transparent;margin-bottom:-2px;user-select:none}
+.tab{flex:1;padding:14px 0;text-align:center;font:600 14px var(--ui-font);font-family:var(--ui-font) !important;color:#555;cursor:pointer;letter-spacing:1px;border-bottom:2px solid transparent;margin-bottom:-2px;user-select:none}
 .tab.active{color:#ffffff;border-bottom-color:var(--green)}
 
 /* ── Tab panels ── */
@@ -177,10 +194,10 @@ body{background:var(--bg);color:var(--text);font:16px/1.5 var(--ui-font);display
 /* ── Form elements ── */
 section{margin-bottom:22px}
 h2{font:700 12px var(--ui-font);letter-spacing:1px;color:var(--green);text-transform:uppercase;margin-bottom:10px;border-bottom:1px solid #1e1e1e;padding-bottom:5px}
-label{display:block;font:15px var(--ui-font);color:#aaaaaa;margin-bottom:5px}
+label{display:block;font:15px var(--ui-font);font-family:var(--ui-font) !important;color:#aaaaaa;margin-bottom:5px}
 input[type=text],input[type=number],input[type=password],select,textarea:not(.p-prompt){
   width:100%;background:#1a1a1a;border:1px solid #444;color:#ffffff;
-  padding:12px;font:16px var(--ui-font);border-radius:4px;outline:none;
+  padding:12px;font:16px var(--ui-font);font-family:var(--ui-font) !important;border-radius:4px;outline:none;
   resize:vertical;-webkit-appearance:none;appearance:none}
 .p-prompt{width:100%;background:#1a1a1a;border:1px solid #444;color:#ffffff;
   padding:12px;font:16px var(--mono);border-radius:4px;outline:none;resize:vertical}
@@ -193,7 +210,7 @@ textarea{min-height:80px}
 .check-row span{font-size:16px;color:#999}
 
 /* ── Buttons ── */
-button{font:600 16px var(--ui-font);border-radius:4px;cursor:pointer;
+button{font:600 16px var(--ui-font);font-family:var(--ui-font) !important;border-radius:4px;cursor:pointer;
   padding:12px 18px;border:1px solid var(--border);background:var(--bg3);color:var(--text);
   width:100%;min-height:48px;margin-top:8px}
 button:active{background:#222}
