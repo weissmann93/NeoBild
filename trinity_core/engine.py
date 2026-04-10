@@ -166,23 +166,24 @@ def run(cfg_path=CFG):
             log_fh.write(f"\n## Round {rnd} | {ts_iso}\n\n**Topic:** {topic}\n\n")
 
             context = ""  # accumulates each agent's output within the round
+            is_first = True
 
             for p in personas:
                 tail = chain_tail()
                 print(f"\n\033[90m[{ts()}] Chain: {tail[:12]}...\033[0m", flush=True)
                 print(f"\033[96m{p['name']}:\033[0m ", end="", flush=True)
 
-                # Build user prompt: topic as context only, plus prior agents' outputs
-                user_prompt = (
-                    f"Analyze the following security topic and provide your perspective. "
-                    f"Do NOT repeat or restate the topic title in your response. "
-                    f"Topic: {topic}"
-                )
-                if context:
+                if is_first:
+                    # Agent 1: receives topic, instructed not to echo the ID/title
+                    user_prompt = (
+                        f"Topic: {topic}\n\n"
+                        f"Respond without mentioning the CVE ID or topic title directly."
+                    )
+                else:
+                    # Agents 2+: topic stripped entirely, prior context is sufficient
                     user_prompt = (
                         f"Previous analysis in this round:\n{context}\n"
-                        f"Your turn -- respond to and build on the above.\n\n"
-                        f"Topic (for reference only, do not restate): {topic}"
+                        f"Your turn -- respond to and build on the above."
                     )
 
                 answer = chat(llm, p["system_prompt"], user_prompt)
@@ -196,6 +197,7 @@ def run(cfg_path=CFG):
                 log_fh.flush()
                 logline(f"  {p['name']}: ok", log_fh)
                 context += f"{p['name']}: {answer}\n"
+                is_first = False
 
             time.sleep(2)
 

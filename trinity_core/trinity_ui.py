@@ -571,6 +571,12 @@ async function pollStatus() {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
+(function() {
+  const log = $('log');
+  log.style.wordBreak    = 'break-word';
+  log.style.overflowWrap = 'break-word';
+  log.style.whiteSpace   = 'pre-wrap';
+})();
 loadConfig();
 loadApiKey();
 connectSSE();
