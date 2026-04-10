@@ -71,6 +71,7 @@ def _reader(proc):
 def _start_engine(cfg_path):
     global _proc
     env = os.environ.copy()
+    env["PYTHONUNBUFFERED"] = "1"
     api_key = read_secret("MNN_API_KEY")
     if api_key:
         env["MNN_API_KEY"] = api_key
@@ -165,10 +166,11 @@ HTML = r"""<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>TrinityCore</title>
+<title>NeoBild</title>
 <style>
 *{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif !important}
 #log,#log *,.p-prompt{font-family:'Courier New',monospace !important}
+.panel:not(#tab-log) *{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif !important}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{--bg:#0d0d0d;--bg2:#111;--bg3:#1a1a1a;--border:#222;--text:#ccc;--dim:#666;--green:#00ff41;--red:#ff4444;--accent:#00ff41;--ui-font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--mono:'Courier New',monospace}
 body{background:var(--bg);color:var(--text);font:16px/1.5 var(--ui-font);font-family:var(--ui-font) !important;display:flex;flex-direction:column;height:100dvh;overflow:hidden}
@@ -247,7 +249,7 @@ button:active{background:#222}
 
 <!-- Always-visible top bar -->
 <div id="topbar">
-  <h1>TRINITY</h1>
+  <h1>NEOBILD</h1>
   <div class="dot" id="dot-mnn"></div>
   <span class="dot-label" id="lbl-mnn">MNN</span>
   <div class="dot" id="dot-eng"></div>

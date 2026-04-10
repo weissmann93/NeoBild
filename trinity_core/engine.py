@@ -109,11 +109,11 @@ def chat(llm_cfg, system_prompt, user_content):
                         print(delta, end="", flush=True)
                 except (KeyError, json.JSONDecodeError):
                     pass
-            print()
+            print(flush=True)
             answer = re.sub(r'<think>.*?</think>', '', "".join(chunks), flags=re.DOTALL).strip()
             return answer or None
         except Exception as e:
-            print(f"  [retry {attempt+1}] {e}")
+            print(f"  [retry {attempt+1}] {e}", flush=True)
             time.sleep(8)
     return None
 
@@ -135,7 +135,7 @@ def fetch_topics(src):
                 for v in selected
             ]
         except Exception as e:
-            print(f"[input] fetch failed ({e}), falling back to static")
+            print(f"[input] fetch failed ({e}), falling back to static", flush=True)
             return src.get("fallback", ["Analyze a recent critical CVE."])
     raise ValueError(f"Unknown input_source type: {kind}")
 
@@ -167,7 +167,7 @@ def run(cfg_path=CFG):
 
             for p in personas:
                 tail = chain_tail()
-                print(f"\n\033[90m[{ts()}] Chain: {tail[:12]}...\033[0m")
+                print(f"\n\033[90m[{ts()}] Chain: {tail[:12]}...\033[0m", flush=True)
                 print(f"\033[96m{p['name']}:\033[0m ", end="", flush=True)
 
                 answer = chat(llm, p["system_prompt"], prev)
@@ -184,7 +184,7 @@ def run(cfg_path=CFG):
 
             time.sleep(2)
 
-    print("\n[TrinityCore] done.")
+    print("\n[TrinityCore] done.", flush=True)
 
 if __name__ == "__main__":
     import sys
