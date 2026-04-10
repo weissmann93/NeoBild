@@ -164,8 +164,8 @@ body{background:var(--bg);color:var(--text);font:16px/1.5 'Courier New',monospac
 
 /* ── Tabs ── */
 #tabbar{background:var(--bg2);border-bottom:2px solid var(--border);display:flex;flex-shrink:0}
-.tab{flex:1;padding:14px 0;text-align:center;font:14px 'Courier New',monospace;color:var(--dim);cursor:pointer;letter-spacing:1px;border-bottom:2px solid transparent;margin-bottom:-2px;user-select:none}
-.tab.active{color:var(--green);border-bottom-color:var(--green)}
+.tab{flex:1;padding:14px 0;text-align:center;font:14px 'Courier New',monospace;color:#555;cursor:pointer;letter-spacing:1px;border-bottom:2px solid transparent;margin-bottom:-2px;user-select:none}
+.tab.active{color:#ffffff;border-bottom-color:var(--green)}
 
 /* ── Tab panels ── */
 .panel{display:none;flex:1;overflow-y:auto;padding:16px 14px}
@@ -174,10 +174,10 @@ body{background:var(--bg);color:var(--text);font:16px/1.5 'Courier New',monospac
 
 /* ── Form elements ── */
 section{margin-bottom:22px}
-h2{font-size:12px;letter-spacing:1px;color:var(--dim);text-transform:uppercase;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:5px}
-label{display:block;font-size:14px;color:#888;margin-bottom:5px}
+h2{font-size:12px;letter-spacing:1px;color:var(--green);text-transform:uppercase;margin-bottom:10px;border-bottom:1px solid #1e1e1e;padding-bottom:5px}
+label{display:block;font-size:14px;color:#aaaaaa;margin-bottom:5px}
 input[type=text],input[type=number],input[type=password],select,textarea{
-  width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);
+  width:100%;background:#1a1a1a;border:1px solid #444;color:#ffffff;
   padding:12px;font:16px 'Courier New',monospace;border-radius:4px;outline:none;
   resize:vertical;-webkit-appearance:none;appearance:none}
 input:focus,textarea:focus,select:focus{border-color:#444}
@@ -198,7 +198,7 @@ button:active{background:#222}
 .btn-danger{border-color:#ff444455;color:var(--red)}
 
 /* ── Persona cards ── */
-.persona-card{background:var(--bg2);border:1px solid #1e1e1e;border-radius:6px;padding:14px;margin-bottom:12px}
+.persona-card{background:#1e1e1e;border:1px solid #333;border-radius:6px;padding:14px;margin-bottom:12px}
 .persona-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .persona-hdr span{color:var(--green);font-size:13px;letter-spacing:1px}
 .rm-btn{background:none;border:none;color:var(--dim);cursor:pointer;font-size:22px;padding:0 6px;width:auto;min-height:auto;margin:0}
@@ -208,7 +208,7 @@ button:active{background:#222}
 #log-lines{font-size:13px;color:var(--dim)}
 #autoscroll-label{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:14px;color:var(--dim);cursor:pointer;user-select:none}
 #autoscroll-label input{width:20px;height:20px;accent-color:var(--green)}
-#log{flex:1;overflow-y:auto;padding:12px 14px;font-size:15px;line-height:1.7;white-space:pre-wrap;word-break:break-all}
+#log{flex:1;overflow-y:auto;padding:12px 14px;font-size:15px;line-height:1.7;white-space:pre-wrap;word-break:break-all;color:#e0e0e0}
 .log-system{color:#444;font-style:italic}
 .log-ok{color:var(--green)}
 .log-err{color:var(--red)}
