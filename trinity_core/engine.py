@@ -151,7 +151,7 @@ def run(cfg_path=CFG):
     os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
     with open(log_path, "a") as log_fh:
-        logline(f"═══ TrinityCore: {cfg['task']} ═══", log_fh)
+        logline(f"=== TrinityCore: {cfg['task']} ===", log_fh)
 
         ok, broken = verify_chain()
         logline(f"[chain] {'OK' if ok else f'BROKEN at entry {broken}!'}", log_fh)

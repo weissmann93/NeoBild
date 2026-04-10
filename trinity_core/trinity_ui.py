@@ -80,8 +80,13 @@ def _reader(proc):
         else:
             buf += ch
             if len(buf) >= 80:
-                _emit(buf)
-                buf = ""
+                idx = buf.rfind(' ', 0, 80)
+                if idx > 0:
+                    _emit(buf[:idx])
+                    buf = buf[idx + 1:]
+                else:
+                    _emit(buf)
+                    buf = ""
     if buf:
         _emit(buf)
     with _buf_lock:
