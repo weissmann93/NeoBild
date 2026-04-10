@@ -56,15 +56,34 @@ def _split_line(line, max_len=120):
         parts.append(buf.rstrip())
     return parts or [line]
 
+def _emit(line):
+    """Strip ANSI, split if long, append to shared buffer."""
+    line = _ANSI.sub("", line.rstrip("\r\n"))
+    if not line:
+        return
+    with _buf_lock:
+        for part in _split_line(line):
+            _buf.append(part)
+        if len(_buf) > _MAX_BUF:
+            del _buf[: len(_buf) - _MAX_BUF]
+
 def _reader(proc):
-    for raw in iter(proc.stdout.readline, b""):
-        line = _ANSI.sub("", raw.decode("utf-8", errors="replace").rstrip())
-        if line:
-            with _buf_lock:
-                for part in _split_line(line):
-                    _buf.append(part)
-                if len(_buf) > _MAX_BUF:
-                    del _buf[: len(_buf) - _MAX_BUF]
+    buf = ""
+    while True:
+        ch = proc.stdout.read(1)
+        if not ch:
+            break
+        ch = ch.decode("utf-8", errors="replace")
+        if ch == "\n":
+            _emit(buf)
+            buf = ""
+        else:
+            buf += ch
+            if len(buf) >= 80:
+                _emit(buf)
+                buf = ""
+    if buf:
+        _emit(buf)
     with _buf_lock:
         _buf.append("[engine stopped]")
 
@@ -169,7 +188,8 @@ HTML = r"""<!DOCTYPE html>
 <title>NeoBild</title>
 <style>
 *{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif !important}
-#log,#log *,.p-prompt{font-family:'Courier New',monospace !important}
+.p-prompt{font-family:'Courier New',monospace !important}
+.log-mono{font-family:'Courier New',monospace !important}
 .panel:not(#tab-log) *{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif !important}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{--bg:#0d0d0d;--bg2:#111;--bg3:#1a1a1a;--border:#222;--text:#ccc;--dim:#666;--green:#00ff41;--red:#ff4444;--accent:#00ff41;--ui-font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--mono:'Courier New',monospace}
@@ -233,7 +253,7 @@ button:active{background:#222}
 #log-lines{font-size:13px;color:var(--dim)}
 #autoscroll-label{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:14px;color:var(--dim);cursor:pointer;user-select:none}
 #autoscroll-label input{width:20px;height:20px;accent-color:var(--green)}
-#log{flex:1;overflow-y:auto;padding:12px 14px;font-size:15px;line-height:1.7;white-space:pre-wrap;word-break:break-all;color:#e0e0e0;font-family:var(--mono)}
+#log{flex:1;overflow-y:auto;padding:12px 14px;font-size:15px;line-height:1.7;white-space:pre-wrap;word-break:break-all;color:#e0e0e0;font-family:var(--ui-font) !important}
 .log-system{color:#444;font-style:italic}
 .log-ok{color:var(--green)}
 .log-err{color:var(--red)}
@@ -513,9 +533,13 @@ function connectSSE() {
   const es = new EventSource('/api/stream');
   es.onmessage = e => {
     const t = e.data;
+    const isChain = t.includes('Chain:') || t.includes('[chain]');
+    const isTs    = /^\[\d{2}:\d{2}:\d{2}\]/.test(t);
     const cls = t.startsWith('[engine') ? 'log-system'
               : t.includes('ERROR') || t.includes('BROKEN') ? 'log-err'
-              : t.includes('Chain:') || t.includes('[chain]') ? 'log-ok' : '';
+              : isChain ? 'log-ok log-mono'
+              : isTs    ? 'log-mono'
+              : '';
     appendLog(t, cls);
   };
   es.onerror = () => {

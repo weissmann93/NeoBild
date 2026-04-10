@@ -106,7 +106,8 @@ def chat(llm_cfg, system_prompt, user_content):
                     delta = json.loads(line[6:])["choices"][0]["delta"].get("content", "")
                     if delta:
                         chunks.append(delta)
-                        print(delta, end="", flush=True)
+                        sys.stdout.write(delta)
+                        sys.stdout.flush()
                 except (KeyError, json.JSONDecodeError):
                     pass
             print(flush=True)
