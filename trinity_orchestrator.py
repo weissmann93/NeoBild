@@ -418,7 +418,10 @@ def main():
 
             for name, system_prompt, color in personas:
                 ts = datetime.datetime.now().strftime("%H:%M:%S")
-                print(f"\n\033[90m[{ts}]\033[0m")
+                entry_preview = chain_append.__doc__ or ""
+                # show the current chain tail hash
+                last_hash = _chain_last_hash()
+                print(f"\n\033[90m[{ts}] Chain: {last_hash[:12]}...\033[0m")
                 print(f"{color}{name}:\033[0m ", end="", flush=True)
 
                 user_content = last_answer
