@@ -24,8 +24,7 @@ python3 trinity_ui.py
 
 ## What it looks like
 
-<!-- Screenshot placeholder -->
-<!-- Add: docs/screenshot.png -->
+![TrinityCore v1.2.0](docs/screenshot.png)
 
 ---
 
