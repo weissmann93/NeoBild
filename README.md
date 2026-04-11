@@ -1,76 +1,101 @@
-# NeoBild — Trinity
+# NeoBild — Local AI on a 300€ Phone
 
-Trinity is a 4-agent autonomous CVE analysis loop running entirely on Android via Termux — no cloud, no GPU, no API key.
+> **Sovereign multi-agent AI. No cloud. No API key. Termux + MNN + TrinityCore.**
 
-![demo](demo.jpg)
+---
 
-## Why this exists
+## What is this?
 
-Running a local LLM on a mid-range Android phone is possible. Running a multi-agent security analysis loop on that same phone, without any external API, is the point of this project. The device is both the inference server and the orchestration host.
+TrinityCore v1.2.0 is a config-driven, 4-agent loop that runs CVE vulnerability analysis entirely offline on Android. Each round passes topics through four specialized agents — red team, forensic, skeptic, strategist — with every answer BLAKE3 hash-chained for tamper-evident logging. It runs on a stock Android phone via Termux, using Qwen2.5-Coder-1.5B quantized on MNN Chat — no cloud, no subscription, no API key required.
 
-## How it works
+---
 
-Four personas execute in a fixed chain each round. Each agent receives only the previous agent's output as context:
-
-1. **Dominus (Skeptic)** — identifies one new vulnerability not yet mentioned
-2. **Axiom (Analyst)** — adds one new technical detail to the previous finding
-3. **Cipher (Critic)** — identifies one specific flaw in the previous statement
-4. **Vector (Strategist)** — names one specific tool, library, or config that mitigates the flaw
-
-At the start of each round, a seed topic is drawn from a rotating list of CVE identifiers fetched from the CISA Known Exploited Vulnerabilities catalog. If the fetch fails, a static fallback list is used.
-
-After each round, pairwise word-overlap across all four answers is computed. Rounds exceeding 80% overlap are discarded. Rounds where a single response exceeds 70% overlap with the previous one trigger a retry with a diversity prompt.
-
-Each response is written to `neobild_discourse_log_blake3.md` with a BLAKE3 anchor hash and per-response TPS measurement.
-
-## Stack
-
-| Component | Details |
-|---|---|
-| Model | Qwen2.5-Coder-1.5B-Instruct (MNN quantized) |
-| Engine | MNN Chat server, OpenAI-compatible API on port 8080 |
-| Device | Redmi Note 14 Pro+ (Snapdragon 7s Gen 3, 8 GB RAM) |
-| Infrastructure | Fully local, no internet required at inference time |
-
-## Quickstart
+## ⚡ Run it in 3 steps
 
 ```bash
-# Start MNN Chat on port 8080 first, then:
-python3 ~/NeoBild/trinity_orchestrator.py
-# Or via alias:
-trinity
+git clone https://github.com/weissmann93/NeoBild
+cd NeoBild/trinity_core
+pip install flask requests blake3
+python3 trinity_ui.py
+# Open http://127.0.0.1:5001
 ```
 
-## Features
+---
 
-- **CISA KEV topic fetch** — pulls current CVE identifiers from the CISA Known Exploited Vulnerabilities catalog at startup; falls back to a static list on failure
-- **Rotating seed topics** — each round uses `TOPICS[round_count % len(TOPICS)]` so the seed never repeats consecutively
-- **Chained agent context** — each persona receives only the immediately preceding output, keeping responses grounded and short
-- **Diversity filter** — pairwise word-overlap check after each round; >80% discards the round, >70% per-agent triggers a retry
-- **Best findings extractor** — Cipher responses containing `CVE`, `bypass`, `injection`, `exploit`, `leak`, or `exfiltrate` are appended to `best_findings.md` with timestamp and topic
-- **BLAKE3 hash-anchored log** — every response written to `neobild_discourse_log_blake3.md` with a BLAKE3 anchor hash and TPS measurement per response
-- **Thinking-mode handling** — `<think>...</think>` blocks stream in a separate color and are stripped before storage; `/no_think` suppresses thinking on supported models
-- **Browser log viewer** — `trinity.html` renders the discourse log with persona filter and full-text search
+## What it looks like
 
-## Project structure
+<!-- Screenshot placeholder -->
+<!-- Add: docs/screenshot.png -->
+
+---
+
+## Architecture
 
 ```
-trinity_orchestrator.py       main agent loop
-trinity_viewer.py             terminal log viewer
-trinity.html                  browser-based log viewer
-start_trinity.sh              launcher script
-best_findings.md              auto-extracted high-signal rounds (gitignored)
-neobild_discourse_log_blake3.md  full round log with BLAKE3 hashes and TPS
-agent_memory.json             sliding context window (gitignored)
+MNN Chat (port 8080) → OpenAI-compatible API → TrinityCore engine.py → BLAKE3 chain log + Obsidian daily log
 ```
 
-## Background
+---
 
-This project is part of [NeoBild](https://neobild.de) — a German community for digital sovereignty, self-hosting and local AI.
+## The 4 Agents
 
-## Contributing
+| Agent | Role | Confidence | Function |
+|---|---|---|---|
+| Dominus | Red Team Researcher | 0.2–0.4 LOW | Identifies new attack vectors not yet mentioned |
+| Axiom | Forensic Analyst | 0.3–0.6 MED | Names concrete IoCs and forensic artifacts |
+| Cipher | Skeptic | 0.5–0.8 MED | Challenges specific claims in prior analysis |
+| Vector | Strategist | 0.7–0.9 HIGH | Proposes concrete mitigations not yet mentioned |
 
-This is a single-device research project. Issues and pull requests are open, but the primary constraint is what runs on a Snapdragon 7s Gen 3 with 8 GB RAM.
+Each agent receives only the last sentence of the prior agent's answer, keeping context tight and forcing genuinely new contributions per round.
+
+---
+
+## Hardware requirements
+
+- Android device, 8 GB RAM minimum
+- Termux from F-Droid (not the Play Store version)
+- MNN Chat standalone Android app
+- `attention_mode 14`, `--backend cpu`
+
+---
+
+## Key flags
+
+```
+-march=armv8-a+dotprod+i8mm   compile flag — prevents SIGILL on A520 cores
+attention_mode = 14            TQ4 quantization — critical for stability on 1.5B
+```
+
+---
+
+## Community
+
+- 23 GitHub stars, 67 cloners in 14 days (18.6% conversion)
+- Maximilian Kiefer built a Java port + MAXXKI integration
+- Snir Balgaly (Palo Alto Networks): *"I want his agent"*
+
+---
+
+## Support this project
+
+If this saved you cloud costs or sparked something useful:
+
+**Bitcoin (BTC)**
+`bc1q0897wq7ze5500w7hypcme0czkqgwlxd3h6p9aj`
+
+**Ethereum (ETH)**
+`0x054AD2556Efbf56CFF48a053DD83C3696f723281`
+
+**Monero (XMR)**
+`47uoRpaykxzWHY1W7oRVeyX5w42GS9uA5Wv3Kp8iBpDHKqpJfxmVPyC5iQDCfT6B5z592fnYyX5YSKjxxwSfmksZ7XCCJti`
+
+**Litecoin (LTC)**
+`ltc1qwtq6w4s4xrmzrgmke3j66leufksw7ev347f4rc`
+
+**GitHub Sponsors**
+[github.com/sponsors/weissmann93](https://github.com/sponsors/weissmann93)
+
+---
 
 ## License
 
